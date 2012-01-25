@@ -1,0 +1,7 @@
+compiled files #
+##################
+*.pyc
+
+# OS generated files #
+*~
+
