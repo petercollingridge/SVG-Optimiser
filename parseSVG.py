@@ -1,17 +1,22 @@
 #!/usr/bin/env python
 
 from xml.etree.ElementTree import ElementTree
+import re
+
+# Regex
+re_translate = re.compile('\((\d+)[\s+|,\s*](\d+)\)')
 
 def printNode(node):
     print node.tag
 
-def translateRect(rect, dx, dy):
-    x = float(rect.get('x', 0)) + dx
-    y = float(rect.get('y', 0)) + dy
+def translateRect(rect, (dx, dy)):
+    x = float(rect.get('x', 0)) + float(dx)
+    y = float(rect.get('y', 0)) + float(dy)
     
     rect.set("x", "%.2f" % x)
     rect.set("y", "%.2f" % y)
     
+    del rect.attrib['transform']
 
 class CleanSVG:
     def __init__(self, svgfile=None):
@@ -47,9 +52,10 @@ class CleanSVG:
             transform = node.get('transform')
             
             if "translate" in transform:
-                print " -translate by:", map(float, transform[10:-1].split(','))
+                print " -translate by:", transform
+                translation = re_translate.search(transform).group(1, 2)
                 if node.tag.split('}')[1] == 'rect':
-                    translateRect(node,3,3)
+                    translateRect(node, translation)
 
 def d():
     tree = ElementTree()
