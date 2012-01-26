@@ -1,0 +1,35 @@
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" height="200" width="200">
+
+	<ns0:style>
+		rect {
+			stroke: black;
+			stroke-width: 2px;
+		}
+        .black-line {
+            fill:  none;
+            stroke: black;
+            stroke-width: 2px;
+        }
+
+	</ns0:style>
+
+    
+    <ns0:rect fill="none" height="196" id="rect1" width="196" x="2" y="2" />
+    
+    
+    <ns0:rect fill="#4090ff" height="60" id="rect2" width="100" x="50.0" y="120.0" />
+    
+    
+    <ns0:rect fill="green" height="40" id="rect3" width="40" x="80.0" y="80.0" />
+    
+    
+    <ns0:circle class="black-line" cx="100.0" cy="50.0" id="circle1" r="30" />
+    
+    
+    <ns0:ellipse class="black-line" cx="99.541" cy="49.999" id="ellipse1" rx="60" ry="30" />
+    
+    <ns0:line class="black-line" id="line1" stroke="black" x1="52.0" x2="148.0" y1="122.0" y2="178.0" />
+    
+    <ns0:polyline class="black-line" id="polyline1" points="0,10 10,0 20,10 30,0 40,10 50,0 60,10" transform="translate(70 10)" />
+
+</ns0:svg>
