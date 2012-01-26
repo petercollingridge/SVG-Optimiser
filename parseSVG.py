@@ -6,22 +6,20 @@ import re
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 
+position_attributes = {"rect":    (["x", "y"]),
+                       "circle":  (["cx", "cy"]),
+                       "ellipse": (["cx", "cy"]),
+                       "line":    (["x1", "y1", "x2", "y2"])}
+
 def printNode(node):
     print node.tag
-
-def translateRect(rect, (dx, dy)):
-    x = float(rect.get('x', 0)) + float(dx)
-    y = float(rect.get('y', 0)) + float(dy)
-    
-    rect.set("x", "%.2f" % x)
-    rect.set("y", "%.2f" % y)
-    
-    del rect.attrib['transform']
 
 class CleanSVG:
     def __init__(self, svgfile=None):
         self.tree = ElementTree()
         self.root = None
+        
+        self.num_format = "%s"
         
         if file:
             self.parseFile(svgfile)
@@ -33,29 +31,39 @@ class CleanSVG:
     def write(self, filename):
         self.tree.write(filename)
     
-    def _traverse(self, node, func=printNode):
+    def _traverse(self, node, func, *args):
         """ Call a passed function with a node and all its descendents. """
         
-        func(node)
+        func(node, args)
         
         for child in node.getchildren():
-            self._traverse(child, func)
+            self._traverse(child, func, *args)
 
     def findTransforms(self):
-        self._traverse(self.root, func=self.handleTransforms)
+        self._traverse(self.root, self._handleTransforms)
 
-    def handleTransforms(self, node):
-        #printNode(node)
+    def _handleTransforms(self, node, *args):
+        printNode(node)
         
         if 'transform' in node.keys():
-            print " -transform"
             transform = node.get('transform')
             
             if "translate" in transform:
-                print " -translate by:", transform
-                translation = re_translate.search(transform).group(1, 2)
-                if node.tag.split('}')[1] == 'rect':
-                    translateRect(node, translation)
+                translation = re_translate.search(transform)
+                if translation:
+                    print " - translate by: (%s, %s)" % translation.group(1,2)
+                    self._translateElement(node, translation.group(1,2))
+                
+    def _translateElement(self, element, delta):
+        element_type = element.tag.split('}')[1]
+        coords = position_attributes.get(element_type)
+            
+        if coords:
+            for i, coord_name in enumerate(coords):
+                new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
+                element.set(coord_name, self.num_format % new_coord)
+            
+            del element.attrib['transform']
 
 def main():
     import os
