@@ -6,6 +6,8 @@ import re
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 
+value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "width", "height"]
+
 position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
                        "ellipse": (["cx", "cy"]),
@@ -115,6 +117,15 @@ class CleanSVG:
     def findTransforms(self):
         self._traverse(self.root, self._handleTransforms)
 
+    def cleanDecimals(self, decimal_places):
+        self.setDemicalPlaces(decimal_places)
+        self._traverse(self.root, self._cleanDecimals)
+
+    def _cleanDecimals(self, node, *args):
+        for attribute in value_attributes:
+            if attribute in node.keys():
+                node.set(attribute, self.num_format % float(node.get(attribute)))
+
     def _handleTransforms(self, node, *args):
         printNode(node)
         
@@ -144,6 +155,7 @@ def main():
     
     s = CleanSVG(filename)
     s.setDemicalPlaces(1)
+    s.cleanDecimals(1)
     s.findTransforms()
     s.write('%s_test.svg' % filename[:-4])
     
