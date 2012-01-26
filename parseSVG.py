@@ -86,6 +86,7 @@ class CleanSVG:
         self.root = None
         
         self.num_format = "%s"
+        self.setDemicalPlaces(1)
         
         if file:
             self.parseFile(svgfile)
@@ -96,6 +97,12 @@ class CleanSVG:
         
     def write(self, filename):
         self.tree.write(filename)
+    
+    def setDemicalPlaces(self, dps):
+        if dps == 0:
+            self.num_format = "%d"
+        else:
+            self.num_format = "%%.%df" % dps    
     
     def _traverse(self, node, func, *args):
         """ Call a passed function with a node and all its descendents. """
@@ -136,6 +143,7 @@ def main():
     filename = os.path.join('examples', 'translations.svg')
     
     s = CleanSVG(filename)
+    s.setDemicalPlaces(1)
     s.findTransforms()
     s.write('%s_test.svg' % filename[:-4])
     
