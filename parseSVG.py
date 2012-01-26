@@ -4,7 +4,7 @@ from xml.etree.ElementTree import ElementTree
 import re
 
 # Regex
-re_translate = re.compile('\((\d+)[\s+|,\s*](\d+)\)')
+re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 
 def printNode(node):
     print node.tag
@@ -31,7 +31,7 @@ class CleanSVG:
         self.root = self.tree.getroot()
         
     def write(self, filename):
-        print self.tree.write(filename)
+        self.tree.write(filename)
     
     def _traverse(self, node, func=printNode):
         """ Call a passed function with a node and all its descendents. """
@@ -57,15 +57,12 @@ class CleanSVG:
                 if node.tag.split('}')[1] == 'rect':
                     translateRect(node, translation)
 
-def d():
-    tree = ElementTree()
-    tree.parse("test_shape.svg")
-
-    root = tree.getroot()
-    doc = root.getchildren()[-1]
-
-    traverse(doc, func=findTransforms)
-
-s = CleanSVG('test_translate.svg')
-s.findTransforms()
-s.write('test.svg')
+def main():
+    import os
+    filename = os.path.join('examples', 'translations.svg')
+    s = CleanSVG(filename)
+    s.findTransforms()
+    s.write('%s_test.svg' % filename[:-4])
+    
+if __name__ == "__main__":
+    main()
