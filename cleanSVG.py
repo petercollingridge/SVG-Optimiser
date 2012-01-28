@@ -91,6 +91,10 @@ class CleanSVG:
         self.tree = SVGTree()
         self.root = None
         
+        # Need to update this if style elements found
+        self.styles = {}
+        self.style_counter = 0
+        
         self.num_format = "%s"
         
         if file:
@@ -101,7 +105,21 @@ class CleanSVG:
         self.root = self.tree.getroot()
         
     def write(self, filename):
+        if self.styles:
+            self._addStyleElement()
         self.tree.write(filename)
+    
+    def _addStyleElement(self):
+        child = ET.SubElement(self.root, "style")
+        style_text = '\n'
+        
+        for styles, style_class in self.styles.iteritems():
+            style_text += ".%s{\n" % style_class
+            for (style_id, style_value) in styles:
+                style_text += '\t%s:\t%s;\n' % (style_id, style_value)
+            style_text += "}\n"
+        
+        child.text = style_text
     
     def setDemicalPlaces(self, decimal_places):
         if decimal_places == 0:
@@ -118,7 +136,10 @@ class CleanSVG:
         """ Ensure all numbers have equal or fewer than a given number of decimal places. """
         self.setDemicalPlaces(decimal_places)
         self._traverse(self.root, self._cleanDecimals)
-        
+    
+    def extractStyles(self):
+        self._traverse(self.root, self._extractStyles)
+    
     def applyTransforms(self):
         """ Apply transforms to element coordinates. """
         self._traverse(self.root, self._handleTransforms)
@@ -165,14 +186,30 @@ class CleanSVG:
         
         return str_number
 
-    def _handleTransforms(self, node, *args):
-        if 'transform' in node.keys():
-            transform = node.get('transform')
+    def _extractStyles(self, element, *args):
+        if "style" in element.keys():
+            styles = element.attrib["style"].split(';')
+            style_tuple = tuple([tuple(style.split(':')) for style in styles])
+            
+            if style_tuple not in self.styles:
+                style_class = "style%d" % self.style_counter
+                self.styles[style_tuple] = style_class
+                self.style_counter += 1
+            else:
+                style_class = self.styles[style_tuple]
+                
+            # Should test to see whether there is already a class
+            element.set("class", style_class)
+            del element.attrib["style"]
+
+    def _handleTransforms(self, element, *args):
+        if 'transform' in element.keys():
+            transform = element.get('transform')
             
             if "translate" in transform:
                 translation = re_translate.search(transform)
                 if translation:
-                    self._translateElement(node, translation.group(1,2))
+                    self._translateElement(element, translation.group(1,2))
                 
     def _translateElement(self, element, delta):
         print " - translate by: (%s, %s)" % delta
@@ -183,20 +220,21 @@ class CleanSVG:
             for i, coord_name in enumerate(coords):
                 new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
                 element.set(coord_name, self._formatNumber(new_coord))
-            del element.attrib['transform']
+            del element.attrib["transform"]
                 
         elif "points" in element.keys():
             values = [float(v) + float(delta[i % 2]) for i, v in enumerate(re_coord_split.split(element.get("points")))]
             str_values = map(self._formatNumber, values)
             point_list = " ".join((str_values[i] + "," + str_values[i+1] for i in range(0, len(str_values), 2)))
             element.set("points", point_list)
-            del element.attrib['transform']
+            del element.attrib["transform"]
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.setDemicalPlaces(1)
-    svg.applyTransforms()
     svg.removeAttribute('id')
+    svg.setDemicalPlaces(1)
+    svg.extractStyles()
+    svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
@@ -206,4 +244,5 @@ if __name__ == "__main__":
         main(sys.argv[1])
     else:
         import os
-        main(os.path.join('examples', 'translations.svg'))
+        #main(os.path.join('examples', 'translations.svg'))
+        main(os.path.join('examples', 'styles.svg'))

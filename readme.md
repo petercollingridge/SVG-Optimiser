@@ -32,6 +32,9 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
             
 ## Remove attributes
 	Remove attributes with a given name, e.g. remove id attributes, which often aren't used.
+
+## CSS stlying
+    Convert individual style attributes to CSS styling.
     
 # --- To Do ---
 
@@ -68,5 +71,8 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
         - circle -> ellipse?
             
 ## CSS stlying
-    Convert individual element styles to CSS styling where appropriate.
-    Ideally find most efficient way to class elements for styling
+	Need to check whether style element already exists and whether class names already exist.
+    Ideally find most efficient way to class elements for styling.
+    
+## Flatten groups
+	Remove groups that aren't adding properties, such as animations or transforms
