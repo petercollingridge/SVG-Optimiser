@@ -5,10 +5,12 @@ import re
 
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
+re_coord_split = re.compile('\s+|,')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 
 # Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
+
 position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
                        "ellipse": (["cx", "cy"]),
@@ -115,25 +117,32 @@ class CleanSVG:
         for child in node.getchildren():
             self._traverse(child, func, *args)
 
+    def stripAttribute(self, attribute):
+        """ Remove all instances of a given attribute. """
+        self._traverse(self.root, self._removeAttribute, attribute)
+
+    def cleanDecimals(self, decimal_places):
+        """ Ensure all numbers have equal or fewer than a given number of decimal places. """
+        self.setDemicalPlaces(decimal_places)
+        self._traverse(self.root, self._cleanDecimals)
+        
     def findTransforms(self):
         self._traverse(self.root, self._handleTransforms)
 
-    def stripAttribute(self, attribute):
-        self._traverse(self.root, self._removeAttribute, attribute)
-
-    def _removeAttribute(self, node, attributes):
+    def _removeAttribute(self, element, attributes):
         for attribute in attributes:
-            if attribute in node.keys():
-                del node.attrib[attribute]
+            if attribute in element.keys():
+                del element.attrib[attribute]
 
-    def cleanDecimals(self, decimal_places):
-        self.setDemicalPlaces(decimal_places)
-        self._traverse(self.root, self._cleanDecimals)
-
-    def _cleanDecimals(self, node, *args):
-        for attribute in value_attributes:
-            if attribute in node.keys():
-                node.set(attribute, self._formatNumber(node.get(attribute)))
+    def _cleanDecimals(self, element, *args):
+        for attribute in element.keys():
+            if attribute == "points":
+                values = map(self._formatNumber, re_coord_split.split(element.get(attribute)))
+                point_list = " ".join((values[i] + "," + values[i+1] for i in range(0, len(values), 2)))
+                element.set("points", point_list)
+                
+            elif attribute in value_attributes:
+                element.set(attribute, self._formatNumber(element.get(attribute)))
 
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
@@ -150,8 +159,6 @@ class CleanSVG:
         return str_number
 
     def _handleTransforms(self, node, *args):
-        printNode(node)
-        
         if 'transform' in node.keys():
             transform = node.get('transform')
             
