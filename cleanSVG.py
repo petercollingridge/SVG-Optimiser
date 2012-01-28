@@ -16,74 +16,75 @@ position_attributes = {"rect":    (["x", "y"]),
                        "ellipse": (["cx", "cy"]),
                        "line":    (["x1", "y1", "x2", "y2"])}
 
-def fixtag(tag, namespaces):
-    # given a decorated tag (of the form {uri}tag), return prefixed
-    # tag and namespace declaration, if any
-    if isinstance(tag, ET.QName):
-        tag = tag.text
-    namespace_uri, tag = tag[1:].split("}", 1)
-    prefix = namespaces.get(namespace_uri)
-    if prefix is None:
-        prefix = ET._namespace_map.get(namespace_uri)
-        if prefix is None:
-            prefix = "ns%d" % len(namespaces)
-        namespaces[namespace_uri] = prefix
-        
-        if prefix == "xml":
-            xmlns = None
-        else:
-            xmlns = ("xmlns", namespace_uri)
+def qname(tag):
+    if '}' in tag:
+        return tag.split('}')[1]
     else:
-        xmlns = None
-        
-    return tag, xmlns
+        return tag
+
+def _serialize_xml(write, elem, encoding, namespaces):
+    tag = elem.tag
+    text = elem.text
+    if tag is ET.Comment:
+        write("<!--%s-->" % ET._encode(text, encoding))
+    elif tag is ET.ProcessingInstruction:
+        write("<?%s?>" % ET._encode(text, encoding))
+    else:
+        tag = qname(tag)
+        if tag is None:
+            if text:
+                write(ET._escape_cdata(text, encoding))
+            for e in elem:
+                _serialize_xml(write, e, encoding, None)
+        else:
+            write("<" + tag)
+            items = elem.items()
+            if items or namespaces:
+                if namespaces:
+                    for v, k in sorted(namespaces.items(), key=lambda x: x[1]):  # sort on prefix
+                        write(" xmlns=\"%s\"" % (ET._escape_attrib(v, encoding)))
+                for k, v in sorted(items):  # lexical order
+                    if isinstance(k, ET.QName):
+                        k = k.text
+                    if isinstance(v, ET.QName):
+                        v = qnames[v.text]
+                    else:
+                        v = ET._escape_attrib(v, encoding)
+                    write(" %s=\"%s\"" % (qname(k), v))
+            if text or len(elem):
+                write(">")
+                if text:
+                    write(ET._escape_cdata(text, encoding))
+                for e in elem:
+                    _serialize_xml(write, e, encoding, None)
+                write("</" + tag + ">")
+            else:
+                write(" />")
+    if elem.tail:
+        write(ET._escape_cdata(elem.tail, encoding))
 
 def printNode(node):
     print ">", node.tag.split('}')[1]
 
 class SVGTree(ET.ElementTree):
 
-    def _write(self, file, node, encoding, namespaces):
+    def write(self, file_or_filename, xml_declaration=None, default_namespace=None):
         """ Overwrite the normal method to avoid writing namespaces everywhere. """
-    
-        # write XML to file
-        tag = node.tag
-        if tag is ET.Comment:
-            file.write("<!-- %s -->" % _escape_cdata(node.text, encoding))
-        elif tag is ET.ProcessingInstruction:
-            file.write("<?%s?>" % _escape_cdata(node.text, encoding))
+        
+        assert self._root is not None
+        
+        if hasattr(file_or_filename, "write"):
+            file = file_or_filename
         else:
-            items = node.items()
-            xmlns_items = [] # new namespaces in this scope
-            try:
-                if isinstance(tag, ET.QName) or tag[:1] == "{":
-                    tag, xmlns = fixtag(tag, namespaces)
-                    if xmlns: xmlns_items.append(xmlns)
-            except TypeError:
-                _raise_serialization_error(tag)
-            file.write("<" + ET._encode(tag, encoding))
+            file = open(file_or_filename, "wb")
             
-            if items or xmlns_items:
-                items.sort() # lexical order
-                for k, v in items:
-                    file.write(" %s=\"%s\"" % (ET._encode(k, encoding), ET._escape_attrib(v, encoding)))
-                for k, v in xmlns_items:
-                    file.write(" %s=\"%s\"" % (ET._encode(k, encoding), ET._escape_attrib(v, encoding)))
-                    
-            if node.text or len(node):
-                file.write(">")
-                if node.text:
-                    file.write(ET._escape_cdata(node.text, encoding))
-                for n in node:
-                    self._write(file, n, encoding, namespaces)
-                file.write("</" + ET._encode(tag, encoding) + ">")
-                
-            else:
-                file.write(" />")
-            for k, v in xmlns_items:
-                del namespaces[v]
-        if node.tail:
-            file.write(ET._escape_cdata(node.tail, encoding))
+        write = file.write
+        # Might be able to ignore this - should go through tags and remove namespaces
+        qnames, namespaces = ET._namespaces(self._root, "us-ascii", default_namespace)
+        _serialize_xml(write, self._root, "us-ascii", namespaces)
+        
+        if file_or_filename is not file:
+            file.close()
 
 class CleanSVG:
     def __init__(self, svgfile=None):
@@ -177,7 +178,7 @@ class CleanSVG:
                 new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
                 element.set(coord_name, self._formatNumber(new_coord))
             del element.attrib['transform']
-            
+                
         elif "points" in element.keys():
             values = [float(v) + float(delta[i % 2]) for i, v in enumerate(re_coord_split.split(element.get("points")))]
             str_values = map(self._formatNumber, values)

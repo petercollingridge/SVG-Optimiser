@@ -1,6 +1,6 @@
-<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" height="200" width="200">
+<svg xmlns="http://www.w3.org/2000/svg" height="200" width="200">
 
-	<ns0:style>
+	<style>
 		rect {
 			stroke: black;
 			stroke-width: 2px;
@@ -11,25 +11,22 @@
             stroke-width: 2px;
         }
 
-	</ns0:style>
+	</style>
 
+    <rect fill="none" height="196" width="196" x="2" y="2" />
     
-    <ns0:rect fill="none" height="196" id="rect1" width="196" x="2" y="2" />
+    <rect fill="#4090ff" height="60" width="100" x="50" y="120" />
     
+    <rect fill="green" height="40.5" width="40.5" x="80" y="80" />
     
-    <ns0:rect fill="#4090ff" height="60" id="rect2" width="100" x="50.0" y="120.0" />
+    <circle class="black-line" cx="100" cy="50" r="30" />
     
+    <ellipse class="black-line" cx="99.5" cy="50" rx="60" ry="30" />
     
-    <ns0:rect fill="green" height="40" id="rect3" width="40" x="80.0" y="80.0" />
+    <line class="black-line" stroke="black" x1="52" x2="148" y1="122" y2="178" />
     
+    <polyline class="black-line" points="69.9,20 80,10 90,20 100,10 110,20 120.1,10 130,20" />
     
-    <ns0:circle class="black-line" cx="100.0" cy="50.0" id="circle1" r="30" />
-    
-    
-    <ns0:ellipse class="black-line" cx="99.541" cy="49.999" id="ellipse1" rx="60" ry="30" />
-    
-    <ns0:line class="black-line" id="line1" stroke="black" x1="52.0" x2="148.0" y1="122.0" y2="178.0" />
-    
-    <ns0:polyline class="black-line" id="polyline1" points="0,10 10,0 20,10 30,0 40,10 50,0 60,10" transform="translate(70 10)" />
+    <polygon class="black-line" points="100,21.2 125,65.6 75,65.6" />
 
-</ns0:svg>
+</svg>
