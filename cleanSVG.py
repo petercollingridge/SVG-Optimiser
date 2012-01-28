@@ -109,16 +109,8 @@ class CleanSVG:
         else:
             self.num_format = "%%.%df" % decimal_places
         self._traverse(self.root, self._cleanDecimals) 
-    
-    def _traverse(self, node, func, *args):
-        """ Call a passed function with a node and all its descendents. """
-        
-        func(node, args)
-        
-        for child in node.getchildren():
-            self._traverse(child, func, *args)
 
-    def stripAttribute(self, attribute):
+    def removeAttribute(self, attribute):
         """ Remove all instances of a given attribute. """
         self._traverse(self.root, self._removeAttribute, attribute)
 
@@ -127,8 +119,17 @@ class CleanSVG:
         self.setDemicalPlaces(decimal_places)
         self._traverse(self.root, self._cleanDecimals)
         
-    def findTransforms(self):
+    def applyTransforms(self):
+        """ Apply transforms to element coordinates. """
         self._traverse(self.root, self._handleTransforms)
+        
+    def _traverse(self, node, func, *args):
+        """ Call a passed function with a node and all its descendents. """
+        
+        func(node, args)
+        
+        for child in node.getchildren():
+            self._traverse(child, func, *args)
 
     def _removeAttribute(self, element, attributes):
         for attribute in attributes:
@@ -192,11 +193,11 @@ class CleanSVG:
             del element.attrib['transform']
 
 def main(filename):
-    s = CleanSVG(filename)
-    s.setDemicalPlaces(1)
-    s.findTransforms()
-    s.stripAttribute('id')
-    s.write('%s_test.svg' % filename[:-4])
+    svg = CleanSVG(filename)
+    svg.setDemicalPlaces(1)
+    svg.applyTransforms()
+    svg.removeAttribute('id')
+    svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
     import sys
