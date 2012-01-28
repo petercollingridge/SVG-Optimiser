@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import xml.etree.ElementTree as ET
-print ET.__file__
 import re
 
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
+re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 
+# Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
-
 position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
                        "ellipse": (["cx", "cy"]),
@@ -89,7 +89,6 @@ class CleanSVG:
         self.root = None
         
         self.num_format = "%s"
-        self.setDemicalPlaces(1)
         
         if file:
             self.parseFile(svgfile)
@@ -101,11 +100,12 @@ class CleanSVG:
     def write(self, filename):
         self.tree.write(filename)
     
-    def setDemicalPlaces(self, dps):
-        if dps == 0:
+    def setDemicalPlaces(self, decimal_places):
+        if decimal_places == 0:
             self.num_format = "%d"
         else:
-            self.num_format = "%%.%df" % dps    
+            self.num_format = "%%.%df" % decimal_places
+        self._traverse(self.root, self._cleanDecimals) 
     
     def _traverse(self, node, func, *args):
         """ Call a passed function with a node and all its descendents. """
@@ -121,19 +121,33 @@ class CleanSVG:
     def stripAttribute(self, attribute):
         self._traverse(self.root, self._removeAttribute, attribute)
 
-    def cleanDecimals(self, decimal_places):
-        self.setDemicalPlaces(decimal_places)
-        self._traverse(self.root, self._cleanDecimals)
-
     def _removeAttribute(self, node, attributes):
         for attribute in attributes:
             if attribute in node.keys():
                 del node.attrib[attribute]
 
+    def cleanDecimals(self, decimal_places):
+        self.setDemicalPlaces(decimal_places)
+        self._traverse(self.root, self._cleanDecimals)
+
     def _cleanDecimals(self, node, *args):
         for attribute in value_attributes:
             if attribute in node.keys():
-                node.set(attribute, self.num_format % float(node.get(attribute)))
+                node.set(attribute, self._formatNumber(node.get(attribute)))
+
+    def _formatNumber(self, number):
+        """ Convert a number to a string representation 
+            with the appropriate number of decimal places. """
+        
+        str_number = self.num_format % float(number)
+        trailing_zeros = re_trailing_zeros.search(str_number)
+        
+        if trailing_zeros:
+            # length equals number of trailing zeros + decimal point if no other numbers
+            length = (len(trailing_zeros.group(2)) + (len(trailing_zeros.group(1)) == 0))
+            str_number = str_number[:-length]
+        
+        return str_number
 
     def _handleTransforms(self, node, *args):
         printNode(node)
@@ -154,7 +168,7 @@ class CleanSVG:
         if coords:
             for i, coord_name in enumerate(coords):
                 new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
-                element.set(coord_name, self.num_format % new_coord)
+                element.set(coord_name, self._formatNumber(new_coord))
             
             del element.attrib['transform']
 
@@ -164,7 +178,6 @@ def main():
     
     s = CleanSVG(filename)
     s.setDemicalPlaces(1)
-    s.cleanDecimals(1)
     s.findTransforms()
     s.stripAttribute('id')
     s.write('%s_test.svg' % filename[:-4])
