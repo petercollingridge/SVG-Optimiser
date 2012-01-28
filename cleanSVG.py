@@ -165,18 +165,24 @@ class CleanSVG:
             if "translate" in transform:
                 translation = re_translate.search(transform)
                 if translation:
-                    print " - translate by: (%s, %s)" % translation.group(1,2)
                     self._translateElement(node, translation.group(1,2))
                 
     def _translateElement(self, element, delta):
+        print " - translate by: (%s, %s)" % delta
         element_type = element.tag.split('}')[1]
         coords = position_attributes.get(element_type)
-            
+
         if coords:
             for i, coord_name in enumerate(coords):
                 new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
                 element.set(coord_name, self._formatNumber(new_coord))
+            del element.attrib['transform']
             
+        elif "points" in element.keys():
+            values = [float(v) + float(delta[i % 2]) for i, v in enumerate(re_coord_split.split(element.get("points")))]
+            str_values = map(self._formatNumber, values)
+            point_list = " ".join((str_values[i] + "," + str_values[i+1] for i in range(0, len(str_values), 2)))
+            element.set("points", point_list)
             del element.attrib['transform']
 
 def main():
