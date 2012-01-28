@@ -1,9 +1,17 @@
-Python program to clean up SVG files.
+Python program to clean up SVG files, particularly those created by Inkscape or Illustrator
 
 * Decimal places
-    - Write attributes to a given number of decimal places
+    Rewrite attributes to a given number of decimal places.
+    Strips out unnecessary trailing zeros.
+    
+    - Attributes
+    	x, y, x1, y2, x2, y2
+    	cx, cy
+    	r, rx, ry
+    	width, height
 
 * Transformations
+	Applies transformations to elements so the attribute can be removed.
 
     - Translation
         - In the form
@@ -17,11 +25,16 @@ Python program to clean up SVG files.
             rect
             circle
             line
+            
+* Remove attributes
+	Remove attributes with a given name, e.g. remove id attributes, which often aren't used.
     
 --- To do ---
 
-* Decimal places
-    - Don't write decimals places that are just zeros
+* Decimal places    
+    - Attributes
+    	<polyline> points
+    	<path> d
 
 * Transformations
 
