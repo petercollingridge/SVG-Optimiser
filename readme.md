@@ -1,6 +1,6 @@
 Python program to clean up SVG files, particularly those created by Inkscape or Illustrator
 
-#--- Current functionality ---
+# --- Current Functionality ---
 
 ## Decimal places
     Rewrite attributes to a given number of decimal places.
@@ -18,26 +18,26 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 
 * Translation
     - In the form
-        comma: (12,34)
-        space(s): (12 34) or (12     34)
-        comma and space(s): (12, 34), (12 ,34), (12 , 34) or (12  ,   34)
-        decimal: (1.2, 3.4)
-        negative: (-1.2, -3.4)
+        - comma: (12,34)
+        - space(s): (12 34) or (12     34)
+        - comma and space(s): (12, 34), (12 ,34), (12 , 34) or (12  ,   34)
+        - decimal: (1.2, 3.4)
+        - negative: (-1.2, -3.4)
         
     - Shapes
-        line
-        rect
-        circle, ellipse
-        polyline, polygon
+        - line
+        - rect
+        - circle, ellipse
+        - polyline, polygon
             
 ## Remove attributes
 	Remove attributes with a given name, e.g. remove id attributes, which often aren't used.
     
-#--- To do ---
+# --- To Do ---
 
 ## Decimal places    
-    - Attributes
-    	<path> d
+* Attributes
+	- <path> d
 
 ## Transformations
 
