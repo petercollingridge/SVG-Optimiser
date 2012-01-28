@@ -149,7 +149,12 @@ class CleanSVG:
         """ Convert a number to a string representation 
             with the appropriate number of decimal places. """
         
-        str_number = self.num_format % float(number)
+        try:
+            number = float(number)
+        except ValueError:
+            return number
+        
+        str_number = self.num_format % number
         trailing_zeros = re_trailing_zeros.search(str_number)
         
         if trailing_zeros:
@@ -186,10 +191,7 @@ class CleanSVG:
             element.set("points", point_list)
             del element.attrib['transform']
 
-def main():
-    import os
-    filename = os.path.join('examples', 'translations.svg')
-    
+def main(filename):
     s = CleanSVG(filename)
     s.setDemicalPlaces(1)
     s.findTransforms()
@@ -197,4 +199,10 @@ def main():
     s.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        import os
+        main(os.path.join('examples', 'translations.svg'))
