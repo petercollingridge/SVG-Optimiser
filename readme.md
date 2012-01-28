@@ -19,8 +19,8 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 * Translation
     - In the form
         - comma: (12,34)
-        - space(s): (12 34) or (12     34)
-        - comma and space(s): (12, 34), (12 ,34), (12 , 34) or (12  ,   34)
+        - space(s): (12 34)
+        - comma and space(s): (12, 34), (12 ,34), (12 , 34)
         - decimal: (1.2, 3.4)
         - negative: (-1.2, -3.4)
         
@@ -37,35 +37,35 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 
 ## Decimal places    
 * Attributes
-	- <path> d
+	- path: d
 
 ## Transformations
 
-    - Translation
-        - In the form
-            single: (12)
-    
-        - Shapes
-            path
-            g
-            text
-            tspan
-            
-    - Rotation
-        - Shapes
-            path
-            polyline
-            line
-            circle
-            rect -> polygon?
-            
-    - Scale
-        - Shapes
-            path
-            polyline
-            line
-            rect
-            circle -> ellipse?
+* Translation
+    - In the form
+        - single: (12)
+
+    - Shapes
+        - path
+        - g
+        - text
+        - tspan
+        
+* Rotation
+    - Shapes
+        - path
+        - polyline
+        - line
+        - circle
+        - rect -> polygon?
+        
+* Scale
+    - Shapes
+        - path
+        - polyline
+        - line
+        - rect
+        - circle -> ellipse?
             
 ## CSS stlying
     Convert individual element styles to CSS styling where appropriate.
