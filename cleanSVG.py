@@ -68,22 +68,33 @@ class CleanSVG:
         style_element.text = style_text
     
     def setDemicalPlaces(self, decimal_places):
+        """ Round attribute numbers to a given number of decimal places. """
+        
         if decimal_places == 0:
             self.num_format = "%d"
         elif decimal_places > 0:
             self.num_format = "%%.%df" % decimal_places
         else:
             self.num_format = "%s"
-            
+        
         for element in self.tree.iter():
-            self._cleanDecimals(element)
+            for attribute in element.keys():
+                if attribute == "points":
+                    values = map(self._formatNumber, re_coord_split.split(element.get(attribute)))
+                    point_list = " ".join((values[i] + "," + values[i+1] for i in range(0, len(values), 2)))
+                    element.set("points", point_list)
+                    
+                elif attribute in value_attributes:
+                    element.set(attribute, self._formatNumber(element.get(attribute)))
 
-    def removeAttribute(self, attribute):
-        """ Remove all instances of a given attribute. """
+    def removeAttributes(self, *attributes):
+        """ Remove all instances of a given list of attributes. """
         
         for element in self.tree.iter():
-            self._removeAttribute(element, attribute)
-        
+            for attribute in attributes:
+                if attribute in element.attrib.keys():
+                    del element.attrib[attribute]
+    
     def removeNamespace(self, namespace):
         """ Remove all attributes of a given namespace. """
         
@@ -93,49 +104,49 @@ class CleanSVG:
             length = len(nslink)
             
             for element in self.tree.iter():
-                self._removeNamespace(element, nslink, length)
+                for attribute in element.attrib.keys():
+                    if attribute[:length] == nslink:
+                        del element.attrib[attribute]
                 
             del self.root.nsmap[namespace]
-
-    def cleanDecimals(self, decimal_places):
-        """ Round all numbers to a given number of decimal places. """
-        
-        self.setDemicalPlaces(decimal_places)
-        for element in self.tree.iter():
-            self._cleanDecimals(element)
     
     def extractStyles(self):
         """ Remove style attribute and but in <style> element as CSS. """
         
         for element in self.tree.iter():
-            self._extractStyles(element)
+            if "style" in element.keys():
+                styles = element.attrib["style"].split(';')
+                style_list = [tuple(style.split(':')) for style in styles]
+            
+                # Remove pointless styles, e.g. opacity = 1
+                for default_style in default_styles & set(style_list):
+                    style_list.remove(default_style)
+                    
+                # Clean decimals:
+                for i, (style_name, style_value) in enumerate(style_list):
+                    number = re_length.search(style_value)
+                    if number:
+                        clean_number = self._formatNumber(number.group(1))
+                        style_list[i] = (style_name, clean_number + number.group(2))
+                    
+                style_tuple = tuple(style_list)
+                if style_tuple not in self.styles:
+                    style_class = "style%d" % self.style_counter
+                    self.styles[style_tuple] = style_class
+                    self.style_counter += 1
+                else:
+                    style_class = self.styles[style_tuple]
+                    
+                # Should test to see whether there is already a class
+                element.set("class", style_class)
+                del element.attrib["style"]
     
     def applyTransforms(self):
         """ Apply transforms to element coordinates. """
         
         for element in self.tree.iter():
             self._applyTransforms(element)
-
-    def _removeAttribute(self, element, *attributes):
-        for attribute in attributes:
-            if attribute in element.attrib.keys():
-                del element.attrib[attribute]
-                
-    def _removeNamespace(self, element, namespace, length):
-        for attribute in element.attrib.keys():
-            if attribute[:length] == namespace:
-                del element.attrib[attribute]
-
-    def _cleanDecimals(self, element):
-        for attribute in element.keys():
-            if attribute == "points":
-                values = map(self._formatNumber, re_coord_split.split(element.get(attribute)))
-                point_list = " ".join((values[i] + "," + values[i+1] for i in range(0, len(values), 2)))
-                element.set("points", point_list)
-                
-            elif attribute in value_attributes:
-                element.set(attribute, self._formatNumber(element.get(attribute)))
-
+    
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
             with the appropriate number of decimal places. """
@@ -154,34 +165,6 @@ class CleanSVG:
             str_number = str_number[:-length]
         
         return str_number
-
-    def _extractStyles(self, element):
-        if "style" in element.keys():
-            styles = element.attrib["style"].split(';')
-            style_list = [tuple(style.split(':')) for style in styles]
-        
-            # Remove pointless styles, e.g. opacity = 1
-            for default_style in default_styles & set(style_list):
-                style_list.remove(default_style)
-                
-            # Clean decimals:
-            for i, (style_name, style_value) in enumerate(style_list):
-                number = re_length.search(style_value)
-                if number:
-                    clean_number = self._formatNumber(number.group(1))
-                    style_list[i] = (style_name, clean_number + number.group(2))
-                
-            style_tuple = tuple(style_list)
-            if style_tuple not in self.styles:
-                style_class = "style%d" % self.style_counter
-                self.styles[style_tuple] = style_class
-                self.style_counter += 1
-            else:
-                style_class = self.styles[style_tuple]
-                
-            # Should test to see whether there is already a class
-            element.set("class", style_class)
-            del element.attrib["style"]
 
     def _applyTransforms(self, element):
         if 'transform' in element.keys():
@@ -212,7 +195,7 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.removeAttribute('id')
+    svg.removeAttributes('id')
     svg.removeNamespace('sodipodi')
     svg.setDemicalPlaces(2)
     svg.extractStyles()
