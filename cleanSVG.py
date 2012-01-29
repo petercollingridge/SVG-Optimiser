@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import xml.etree.ElementTree as ET
+from lxml import etree
 import re
 
 # Regex
@@ -26,79 +26,9 @@ position_attributes = {"rect":    (["x", "y"]),
                        "ellipse": (["cx", "cy"]),
                        "line":    (["x1", "y1", "x2", "y2"])}
 
-def qname(tag):
-    if '}' in tag:
-        return tag.split('}')[1]
-    else:
-        return tag
-
-def _serialize_xml(write, elem, encoding, namespaces):
-    tag = elem.tag
-    text = elem.text
-    if tag is ET.Comment:
-        write("<!--%s-->" % ET._encode(text, encoding))
-    elif tag is ET.ProcessingInstruction:
-        write("<?%s?>" % ET._encode(text, encoding))
-    else:
-        tag = qname(tag)
-        if tag is None:
-            if text:
-                write(ET._escape_cdata(text, encoding))
-            for e in elem:
-                _serialize_xml(write, e, encoding, None)
-        else:
-            write("<" + tag)
-            items = elem.items()
-            if items or namespaces:
-                if namespaces:
-                    for v, k in sorted(namespaces.items(), key=lambda x: x[1]):  # sort on prefix
-                        write(" xmlns=\"%s\"" % (ET._escape_attrib(v, encoding)))
-                for k, v in sorted(items):  # lexical order
-                    if isinstance(k, ET.QName):
-                        k = k.text
-                    if isinstance(v, ET.QName):
-                        v = qnames[v.text]
-                    else:
-                        v = ET._escape_attrib(v, encoding)
-                    write(" %s=\"%s\"" % (qname(k), v))
-            if text or len(elem):
-                write(">")
-                if text:
-                    write(ET._escape_cdata(text, encoding))
-                for e in elem:
-                    _serialize_xml(write, e, encoding, None)
-                write("</" + tag + ">")
-            else:
-                write(" />")
-    if elem.tail:
-        write(ET._escape_cdata(elem.tail, encoding))
-
-def printNode(node):
-    print ">", node.tag.split('}')[1]
-
-class SVGTree(ET.ElementTree):
-
-    def write(self, file_or_filename, xml_declaration=None, default_namespace=None):
-        """ Overwrite the normal method to avoid writing namespaces everywhere. """
-        
-        assert self._root is not None
-        
-        if hasattr(file_or_filename, "write"):
-            file = file_or_filename
-        else:
-            file = open(file_or_filename, "wb")
-        
-        # Might be able to ignore this - should go through tags and remove namespaces
-        qnames, namespaces = ET._namespaces(self._root, "us-ascii", default_namespace)
-        print qnames
-        _serialize_xml(file.write, self._root, "us-ascii", namespaces)
-        
-        if file_or_filename is not file:
-            file.close()
-
 class CleanSVG:
     def __init__(self, svgfile=None):
-        self.tree = SVGTree()
+        self.tree = None
         self.root = None
         
         # Need to update this if style elements found
@@ -111,20 +41,19 @@ class CleanSVG:
             self.parseFile(svgfile)
             
     def parseFile(self, filename):
-        self.tree.parse(filename)
+        self.tree = etree.parse(filename)
         self.root = self.tree.getroot()
         
     def write(self, filename):
         if self.styles:
             self._addStyleElement()
-        self.tree.write(filename)
+        self.tree.write(filename, pretty_print=True)
     
     def _addStyleElement(self):
         """ Insert a CSS style element containing information 
             from self.styles to the top of the file. """
         
-        style_element = self.root.makeelement("style", {})
-        style_element.tail = "\n"
+        style_element = etree.SubElement(self.root, "style")
         self.root.insert(0, style_element)
         style_text = '\n'
         
@@ -142,35 +71,33 @@ class CleanSVG:
             self.num_format = "%d"
         else:
             self.num_format = "%%.%df" % decimal_places
-        self._traverse(self.root, self._cleanDecimals) 
+        self._traverse(self.tree, self._cleanDecimals) 
 
     def removeAttribute(self, attribute):
         """ Remove all instances of a given attribute. """
-        self._traverse(self.root, self._removeAttribute, attribute)
+        self._traverse(self.tree, self._removeAttribute, attribute)
 
     def cleanDecimals(self, decimal_places):
         """ Ensure all numbers have equal or fewer than a given number of decimal places. """
         self.setDemicalPlaces(decimal_places)
-        self._traverse(self.root, self._cleanDecimals)
+        self._traverse(self.tree, self._cleanDecimals)
     
     def extractStyles(self):
-        self._traverse(self.root, self._extractStyles)
+        self._traverse(self.tree, self._extractStyles)
     
     def applyTransforms(self):
         """ Apply transforms to element coordinates. """
-        self._traverse(self.root, self._handleTransforms)
+        self._traverse(self.tree, self._handleTransforms)
         
-    def _traverse(self, node, func, *args):
+    def _traverse(self, element, func, *args):
         """ Call a passed function with a node and all its descendents. """
-        
-        func(node, args)
-        
-        for child in node.getchildren():
-            self._traverse(child, func, *args)
+
+        for element in self.tree.iter():
+            func(element, args)
 
     def _removeAttribute(self, element, attributes):
         for attribute in attributes:
-            if attribute in element.keys():
+            if attribute in element.attrib.keys():
                 del element.attrib[attribute]
 
     def _cleanDecimals(self, element, *args):
@@ -267,4 +194,5 @@ if __name__ == "__main__":
     else:
         import os
         #main(os.path.join('examples', 'translations.svg'))
-        main(os.path.join('examples', 'styles.svg'))
+        #main(os.path.join('examples', 'styles.svg'))
+        main(os.path.join('examples', 'Chlamydomonas.svg'))
