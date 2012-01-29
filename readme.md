@@ -2,6 +2,12 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 
 # --- Current Functionality ---
 
+## Remove attributes
+	Remove attributes with a given name, e.g. remove 'id' attributes, which often aren't used.
+
+## Remove namespaces
+	Remove all attributes associated with a given namespace, e.g. remove 'sodipodi' attributes created by Inkscape.
+
 ## Decimal places
     Rewrite attributes to a given number of decimal places.
     Strips out unnecessary trailing zeros.
@@ -29,9 +35,6 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
         - rect
         - circle, ellipse
         - polyline, polygon
-            
-## Remove attributes
-	Remove attributes with a given name, e.g. remove id attributes, which often aren't used.
 
 ## CSS stlying
     Convert individual style attributes to CSS styling.

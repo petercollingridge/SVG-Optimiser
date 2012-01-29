@@ -87,8 +87,15 @@ class CleanSVG:
     def removeNamespace(self, namespace):
         """ Remove all attributes of a given namespace. """
         
-        for element in self.tree.iter():
-            self._removeNamespace(element, namespace)
+        nslink = self.root.nsmap.get(namespace)
+        if nslink:
+            nslink = "{%s}" % nslink
+            length = len(nslink)
+            
+            for element in self.tree.iter():
+                self._removeNamespace(element, nslink, length)
+                
+            del self.root.nsmap[namespace]
 
     def cleanDecimals(self, decimal_places):
         """ Round all numbers to a given number of decimal places. """
@@ -112,6 +119,11 @@ class CleanSVG:
     def _removeAttribute(self, element, *attributes):
         for attribute in attributes:
             if attribute in element.attrib.keys():
+                del element.attrib[attribute]
+                
+    def _removeNamespace(self, element, namespace, length):
+        for attribute in element.attrib.keys():
+            if attribute[:length] == namespace:
                 del element.attrib[attribute]
 
     def _cleanDecimals(self, element):
@@ -201,6 +213,7 @@ class CleanSVG:
 def main(filename):
     svg = CleanSVG(filename)
     svg.removeAttribute('id')
+    svg.removeNamespace('sodipodi')
     svg.setDemicalPlaces(2)
     svg.extractStyles()
     svg.applyTransforms()
