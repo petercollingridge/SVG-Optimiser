@@ -18,6 +18,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 	- r, rx, ry
 	- width, height
 	- points
+	- d
 
 ## Transformations
 	Applies transformations to elements so the attribute can be removed.
@@ -40,10 +41,6 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
     Convert individual style attributes to CSS styling.
     
 # --- To Do ---
-
-## Decimal places    
-* Attributes
-	- path: d
 
 ## Transformations
 

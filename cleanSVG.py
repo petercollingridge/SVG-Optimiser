@@ -6,7 +6,7 @@ import re
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
-re_path_split = re,compile('\s+|,|\w')
+re_path_coords = re.compile('[a-zA-Z]')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
@@ -86,14 +86,25 @@ class CleanSVG:
             self.num_format = "%s"
         
         for element in self.tree.iter():
-            for attribute in element.keys():
-                if attribute == "points":
-                    values = map(self._formatNumber, re_coord_split.split(element.get(attribute)))
-                    point_list = " ".join((values[i] + "," + values[i+1] for i in range(0, len(values), 2)))
-                    element.set("points", point_list)
-                    
-                elif attribute in value_attributes:
-                    element.set(attribute, self._formatNumber(element.get(attribute)))
+            tag = element.tag.split('}')[1]
+            
+            if tag == "polyline" or tag == "polygon":
+                coords = map(self._formatNumber, re_coord_split.split(element.get("points")))
+                point_list = " ".join((coords[i] + "," + coords[i+1] for i in range(0, len(coords), 2)))
+                element.set("points", point_list)
+                
+            elif tag == "path":
+                coords = map(self._formatNumber, re_coord_split.split(element.get("d")))
+                coord_list = " ".join(coords)
+                element.set("d", coord_list)
+                #for coord in coords:
+                #    if re_path_coords.match(coord):
+                #        print coord
+                
+            else:
+                for attribute in element.attrib.keys():
+                    if attribute in value_attributes:
+                        element.set(attribute, self._formatNumber(element.get(attribute)))
 
     def removeAttributes(self, *attributes):
         """ Remove all instances of a given list of attributes. """
