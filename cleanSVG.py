@@ -7,10 +7,11 @@ import re
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
+re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
 # Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
-default_styles = [
+default_styles = set([
     ("opacity", "1"),
     ("fill-opacity", "1"),
     ("stroke-width", "1"),
@@ -19,7 +20,7 @@ default_styles = [
     ("stroke-linecap", "butt"),
     ("stroke-dasharray", "none"),
     ("stroke-dashoffset", "0")
-]
+])
 
 position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
@@ -69,8 +70,10 @@ class CleanSVG:
     def setDemicalPlaces(self, decimal_places):
         if decimal_places == 0:
             self.num_format = "%d"
-        else:
+        elif decimal_places > 0:
             self.num_format = "%%.%df" % decimal_places
+        else:
+            self.num_format = "%s"
         self._traverse(self.tree, self._cleanDecimals) 
 
     def removeAttribute(self, attribute):
@@ -135,9 +138,15 @@ class CleanSVG:
             style_list = [tuple(style.split(':')) for style in styles]
         
             # Remove pointless styles, e.g. opacity = 1
-            for default_style in default_styles:
-                if default_style in style_list:
-                    style_list.remove(default_style)
+            for default_style in default_styles & set(style_list):
+                style_list.remove(default_style)
+                
+            # Clean decimals:
+            for i, (style_name, style_value) in enumerate(style_list):
+                number = re_length.search(style_value)
+                if number:
+                    clean_number = self._formatNumber(number.group(1))
+                    style_list[i] = (style_name, clean_number + number.group(2))
                 
             style_tuple = tuple(style_list)
             if style_tuple not in self.styles:
@@ -181,7 +190,7 @@ class CleanSVG:
 def main(filename):
     svg = CleanSVG(filename)
     svg.removeAttribute('id')
-    svg.setDemicalPlaces(1)
+    svg.setDemicalPlaces(2)
     svg.extractStyles()
     svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
