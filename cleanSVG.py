@@ -6,6 +6,7 @@ import re
 # Regex
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
+re_path_split = re,compile('\s+|,|\w')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
@@ -14,12 +15,19 @@ value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry
 default_styles = set([
     ("opacity", "1"),
     ("fill-opacity", "1"),
+    ("stroke", "none"),
     ("stroke-width", "1"),
     ("stroke-opacity", "1"),
     ("stroke-miterlimit", "4"),
     ("stroke-linecap", "butt"),
+    ("stroke-linejoin", "miter"),
     ("stroke-dasharray", "none"),
-    ("stroke-dashoffset", "0")
+    ("stroke-dashoffset", "0"),
+    ("font-anchor", "start"),
+    ("font-style", "normal"),
+    ("font-weight", "normal"),
+    ("font-stretch", "normal"),
+    ("font-variant", "normal")
 ])
 
 position_attributes = {"rect":    (["x", "y"]),
@@ -104,6 +112,9 @@ class CleanSVG:
             length = len(nslink)
             
             for element in self.tree.iter():
+                if element.tag[:length] == nslink:
+                    self.root.remove(element)
+                
                 for attribute in element.attrib.keys():
                     if attribute[:length] == nslink:
                         del element.attrib[attribute]
@@ -145,7 +156,13 @@ class CleanSVG:
         """ Apply transforms to element coordinates. """
         
         for element in self.tree.iter():
-            self._applyTransforms(element)
+            if 'transform' in element.keys():
+                transform = element.get('transform')
+                
+                if "translate" in transform:
+                    translation = re_translate.search(transform)
+                    if translation:
+                        self._translateElement(element, translation.group(1,2))
     
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
@@ -166,15 +183,6 @@ class CleanSVG:
         
         return str_number
 
-    def _applyTransforms(self, element):
-        if 'transform' in element.keys():
-            transform = element.get('transform')
-            
-            if "translate" in transform:
-                translation = re_translate.search(transform)
-                if translation:
-                    self._translateElement(element, translation.group(1,2))
-                
     def _translateElement(self, element, delta):
         print " - translate by: (%s, %s)" % delta
         element_type = element.tag.split('}')[1]
