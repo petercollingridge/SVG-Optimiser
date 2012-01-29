@@ -10,6 +10,16 @@ re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 
 # Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
+default_styles = [
+    ("opacity", "1"),
+    ("fill-opacity", "1"),
+    ("stroke-width", "1"),
+    ("stroke-opacity", "1"),
+    ("stroke-miterlimit", "4"),
+    ("stroke-linecap", "butt"),
+    ("stroke-dasharray", "none"),
+    ("stroke-dashoffset", "0")
+]
 
 position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
@@ -77,11 +87,11 @@ class SVGTree(ET.ElementTree):
             file = file_or_filename
         else:
             file = open(file_or_filename, "wb")
-            
-        write = file.write
+        
         # Might be able to ignore this - should go through tags and remove namespaces
         qnames, namespaces = ET._namespaces(self._root, "us-ascii", default_namespace)
-        _serialize_xml(write, self._root, "us-ascii", namespaces)
+        print qnames
+        _serialize_xml(file.write, self._root, "us-ascii", namespaces)
         
         if file_or_filename is not file:
             file.close()
@@ -110,16 +120,22 @@ class CleanSVG:
         self.tree.write(filename)
     
     def _addStyleElement(self):
-        child = ET.SubElement(self.root, "style")
+        """ Insert a CSS style element containing information 
+            from self.styles to the top of the file. """
+        
+        style_element = self.root.makeelement("style", {})
+        style_element.tail = "\n"
+        self.root.insert(0, style_element)
         style_text = '\n'
         
+        # Should order styles
         for styles, style_class in self.styles.iteritems():
-            style_text += ".%s{\n" % style_class
+            style_text += "\t.%s{\n" % style_class
             for (style_id, style_value) in styles:
-                style_text += '\t%s:\t%s;\n' % (style_id, style_value)
-            style_text += "}\n"
+                style_text += '\t\t%s:\t%s;\n' % (style_id, style_value)
+            style_text += "\t}\n"
         
-        child.text = style_text
+        style_element.text = style_text
     
     def setDemicalPlaces(self, decimal_places):
         if decimal_places == 0:
@@ -189,8 +205,14 @@ class CleanSVG:
     def _extractStyles(self, element, *args):
         if "style" in element.keys():
             styles = element.attrib["style"].split(';')
-            style_tuple = tuple([tuple(style.split(':')) for style in styles])
-            
+            style_list = [tuple(style.split(':')) for style in styles]
+        
+            # Remove pointless styles, e.g. opacity = 1
+            for default_style in default_styles:
+                if default_style in style_list:
+                    style_list.remove(default_style)
+                
+            style_tuple = tuple(style_list)
             if style_tuple not in self.styles:
                 style_class = "style%d" % self.style_counter
                 self.styles[style_tuple] = style_class
