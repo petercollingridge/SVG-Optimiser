@@ -7,6 +7,7 @@ import re
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
 re_path_coords = re.compile('[a-zA-Z]')
+re_path_split = re.compile('([ACHLMQSTVZachlmqstvz])')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
@@ -86,7 +87,7 @@ class CleanSVG:
             self.num_format = "%s"
         
         for element in self.tree.iter():
-            if not isinstance(element, basestring):
+            if not isinstance(element.tag, basestring):
                 continue
             
             tag = element.tag.split('}')[1]
@@ -178,6 +179,22 @@ class CleanSVG:
                     if translation:
                         self._translateElement(element, translation.group(1,2))
     
+    def parsePaths(self):
+        for element in self.tree.iter():
+            if not isinstance(element.tag, basestring):
+                continue
+            
+            tag = element.tag.split('}')[1]
+            if tag == "path":
+                self._parsePath(element.get("d"))
+    
+    def _parsePath(self, d):
+        commands = re_path_split.split(d)
+        if len(commands) > 2:
+            for command, values in [(commands[i], commands[i+1]) for i in range(1, len(commands), 2)]:
+                values = [float(value) for value in re_coord_split.split(values) if value != '']
+                print command, values
+    
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
             with the appropriate number of decimal places. """
@@ -217,12 +234,13 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.removeAttributes('id')
-    svg.removeNamespace('sodipodi')
-    svg.setDemicalPlaces(1)
-    svg.extractStyles()
-    svg.applyTransforms()
-    svg.write('%s_test.svg' % filename[:-4])
+    svg.parsePaths()
+    #svg.removeAttributes('id')
+    #svg.removeNamespace('sodipodi')
+    #svg.setDemicalPlaces(1)
+    #svg.extractStyles()
+    #svg.applyTransforms()
+    #svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
     import sys
@@ -233,4 +251,5 @@ if __name__ == "__main__":
         import os
         #main(os.path.join('examples', 'translations.svg'))
         #main(os.path.join('examples', 'styles.svg'))
-        main(os.path.join('examples', 'Chlamydomonas.svg'))
+        main(os.path.join('examples', 'paths.svg'))
+        #main(os.path.join('examples', 'Chlamydomonas.svg'))
