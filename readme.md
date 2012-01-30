@@ -8,9 +8,9 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 ## Remove namespaces
 	Remove all attributes associated with a given namespace, e.g. remove 'sodipodi' attributes created by Inkscape.
 
-## Decimal places
+## Set decimal places
     Rewrite attributes to a given number of decimal places.
-    Strips out unnecessary trailing zeros.
+    Strip out unnecessary trailing zeros.
     
 * Attributes
 	- x, y, x1, y2, x2, y2
@@ -20,7 +20,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 	- points
 	- d
 
-## Transformations
+## Apply transformations
 	Applies transformations to elements so the attribute can be removed.
 
 * Translation
@@ -39,6 +39,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 
 ## CSS stlying
     Convert individual style attributes to CSS styling.
+    Remove default styles.
     
 # --- To Do ---
 
