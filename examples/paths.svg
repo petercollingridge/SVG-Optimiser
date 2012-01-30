@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+	 xmlns:xlink="http://www.w3.org/1999/xlink"
+	 width="240" height="240"
+	 viewBox="-120, -120, 240, 240">
+
+	<style>
+        .black-line {
+            fill:  none;
+            stroke: #111;
+            stroke-width: 2px;
+        }
+
+	</style>
+
+    <rect class="black-line" x="-118" y="-118" width="236" height="236" fill="none" />
+    
+    <!-- Spaces, absolute commands -->
+    <path class="black-line" d="M10 20 L20 30 L30 20"/>
+    
+    <!-- Commas, absolute commands -->
+    <path class="black-line" d="M30,30 L40,20 L50,30"/>
+    
+     <!-- Commas and spaces mixed, absolute commands -->
+    <path class="black-line" d="M50 20 L60,30 L70, 20"/>
+    
+    <!-- Spaces, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M70 30L80 20L90 30"/>
+    
+    <!-- Commas, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M90,20L100,30L110,20"/>
+    
+    <!-- Spaces, absolute commands, no repeated command -->
+    <path class="black-line" d="M10 45 L20 35 30 45"/>
+    
+    <!-- Spaces, absolute commands, two sections -->
+    <path class="black-line" d="M30 35 L40 45 L50 35 M50 45 L60 35 L70 45"/>
+
+    <!-- Negatives, spaces, absolute commands -->
+    <path class="black-line" d="M-10 20 L-20 30 L-30 20"/>
+    
+    <!-- Negatives, commas, absolute commands -->
+    <path class="black-line" d="M-30,30 L-40,20 L-50,30"/>
+    
+     <!-- Negatives, commas and spaces mixed, absolute commands -->
+    <path class="black-line" d="M-50 20 L-60,30 L-70, 20"/>
+    
+    <!-- Negatives, spaces, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M-70 30L-80 20L-90 30"/>
+    
+    <!-- Negatives, commas, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M-90,20L-100,30L-110,20"/>
+    
+    <!-- Negatives and decimals, spaces, absolute commands -->
+    <path class="black-line" d="M-10.0 -20.0 L-20.00 -30.00 L-30.000 -20.000"/>
+    
+    <!-- Negatives and decimals, commas, absolute commands -->
+    <path class="black-line" d="M-30.0,-30.0 L-40.00,-20.00 L-50.000,-30.000"/>
+    
+     <!-- Negatives and decimals, commas and spaces mixed, absolute commands -->
+    <path class="black-line" d="M-50.0 -20.0 L-60.00,-30.00 L-70.000, -20.000"/>
+    
+    <!-- Negatives and decimals, spaces, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M-70.0 -30.0L-80.00 -20.00L-90.000 -30.000"/>
+    
+    <!-- Negatives and decimals, commas, absolute commands, no spaces between commands -->
+    <path class="black-line" d="M-90.0,-20.0L-100.00,-30.00L-110.000,-20.000"/>
+
+</svg>
