@@ -86,6 +86,9 @@ class CleanSVG:
             self.num_format = "%s"
         
         for element in self.tree.iter():
+            if not isinstance(element, basestring):
+                continue
+            
             tag = element.tag.split('}')[1]
             
             if tag == "polyline" or tag == "polygon":
@@ -216,7 +219,7 @@ def main(filename):
     svg = CleanSVG(filename)
     svg.removeAttributes('id')
     svg.removeNamespace('sodipodi')
-    svg.setDemicalPlaces(2)
+    svg.setDemicalPlaces(1)
     svg.extractStyles()
     svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
