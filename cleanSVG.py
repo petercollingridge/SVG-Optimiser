@@ -11,6 +11,17 @@ re_path_split = re.compile('([ACHLMQSTVZachlmqstvz])')
 re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
 re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
+# Path commands
+path_commands = {
+    "M": (0, 1),
+    "L": (0, 1),
+    "T": (0, 1),
+    "H": (0),
+    "V": (1),
+    "A": (-1, -1, -1, -1, -1, 0, 1),    
+    "C": (0, 1, 0, 1, 0, 1)
+}
+
 # Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
 default_styles = set([
@@ -179,22 +190,6 @@ class CleanSVG:
                     if translation:
                         self._translateElement(element, translation.group(1,2))
     
-    def parsePaths(self):
-        for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
-                continue
-            
-            tag = element.tag.split('}')[1]
-            if tag == "path":
-                self._parsePath(element.get("d"))
-    
-    def _parsePath(self, d):
-        commands = re_path_split.split(d)
-        if len(commands) > 2:
-            for command, values in [(commands[i], commands[i+1]) for i in range(1, len(commands), 2)]:
-                values = [float(value) for value in re_coord_split.split(values) if value != '']
-                print command, values
-    
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
             with the appropriate number of decimal places. """
@@ -216,31 +211,59 @@ class CleanSVG:
 
     def _translateElement(self, element, delta):
         print " - translate by: (%s, %s)" % delta
+        delta = map(float, delta)
         element_type = element.tag.split('}')[1]
         coords = position_attributes.get(element_type)
 
         if coords:
             for i, coord_name in enumerate(coords):
-                new_coord = float(element.get(coord_name, 0)) + float(delta[i % 2])
+                new_coord = float(element.get(coord_name, 0)) + delta[i % 2]
                 element.set(coord_name, self._formatNumber(new_coord))
             del element.attrib["transform"]
                 
         elif "points" in element.keys():
-            values = [float(v) + float(delta[i % 2]) for i, v in enumerate(re_coord_split.split(element.get("points")))]
+            values = [float(v) + delta[i % 2] for i, v in enumerate(re_coord_split.split(element.get("points")))]
             str_values = map(self._formatNumber, values)
             point_list = " ".join((str_values[i] + "," + str_values[i+1] for i in range(0, len(str_values), 2)))
             element.set("points", point_list)
             del element.attrib["transform"]
+            
+        elif "d" in element.keys():
+            delta.append(0)
+            commands = self._parsePath(element.get("d"))
+
+            command_str = ""
+            for command, values in commands:
+                command_str += command
+                if command in path_commands:
+                    d = path_commands[command]
+                    
+                    for n, value in enumerate(values):
+                        command_str += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
+            
+            print command_str
+            element.set("d", command_str)
+            del element.attrib["transform"]
+
+    def _parsePath(self, d):
+        commands = []
+        split_commands = re_path_split.split(d)
+        
+        if len(split_commands) > 2:
+            for command, values in [(split_commands[i], split_commands[i+1]) for i in range(1, len(split_commands), 2)]:
+                values = [float(value) for value in re_coord_split.split(values) if value != '']
+                commands.append((command, values))
+        
+        return commands
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.parsePaths()
     #svg.removeAttributes('id')
     #svg.removeNamespace('sodipodi')
     #svg.setDemicalPlaces(1)
     #svg.extractStyles()
-    #svg.applyTransforms()
-    #svg.write('%s_test.svg' % filename[:-4])
+    svg.applyTransforms()
+    svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
     import sys
