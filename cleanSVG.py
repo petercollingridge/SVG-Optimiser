@@ -87,7 +87,7 @@ class CleanSVG:
         
         style_element.text = style_text
     
-    def setDemicalPlaces(self, decimal_places):
+    def setDecimalPlaces(self, decimal_places):
         """ Round attribute numbers to a given number of decimal places. """
         
         if decimal_places == 0:
@@ -260,7 +260,7 @@ def main(filename):
     svg = CleanSVG(filename)
     #svg.removeAttributes('id')
     #svg.removeNamespace('sodipodi')
-    #svg.setDemicalPlaces(1)
+    #svg.setDecimalPlaces(1)
     #svg.extractStyles()
     svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
