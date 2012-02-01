@@ -240,6 +240,8 @@ class CleanSVG:
                     
                     for n, value in enumerate(values):
                         command_str += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
+                else:
+                    command_str += " ".join(map(self._formatNumber, values))
             
             print command_str
             element.set("d", command_str)
@@ -260,8 +262,8 @@ def main(filename):
     svg = CleanSVG(filename)
     #svg.removeAttributes('id')
     #svg.removeNamespace('sodipodi')
-    #svg.setDecimalPlaces(1)
     #svg.extractStyles()
+    svg.setDecimalPlaces(1)
     svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
     
