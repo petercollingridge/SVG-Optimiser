@@ -36,6 +36,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
         - rect
         - circle, ellipse
         - polyline, polygon
+        - path (not fully tested)
 
 ## CSS stlying
     Convert individual style attributes to CSS styling.
@@ -50,7 +51,6 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
         - single: (12)
 
     - Shapes
-        - path
         - g
         - text
         - tspan
@@ -58,18 +58,33 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 * Rotation
     - Shapes
         - path
-        - polyline
+        - polyline/polygon
         - line
         - circle
-        - rect -> polygon?
+        - rect -> polygon/path?
         
 * Scale
     - Shapes
         - path
-        - polyline
+        - polyline/polygon
         - line
         - rect
         - circle -> ellipse?
+        
+* SkewX and SkewY
+	- Shapes
+		- line
+		- path
+		- polyline/polygon
+		- rect -> polygon/path?
+		- circle -> path arc?
+		
+* Matrix
+	- Shapes
+		- line
+		- path
+		- polyline/polygon
+		- rect -> polygon/path?
             
 ## CSS stlying
 	Need to check whether style element already exists and whether class names already exist.
