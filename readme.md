@@ -7,6 +7,9 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 
 ## Remove namespaces
 	Remove all attributes associated with a given namespace, e.g. remove 'sodipodi' attributes created by Inkscape.
+	
+## Remove redundant groups
+	Move child elements outdside of group with no attributes, then delete group.
 
 ## Set decimal places
     Rewrite attributes to a given number of decimal places.
@@ -43,6 +46,14 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
     Remove default styles.
     
 # --- To Do ---
+
+## Remove namespaces
+	Remove xml namespace if possible
+	
+## Groups
+	Remove unnecessary groups
+	Remove unnecessary text groups
+	Add groups in make styling and transforms more efficient
 
 ## Transformations
 
@@ -89,6 +100,3 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 ## CSS stlying
 	Need to check whether style element already exists and whether class names already exist.
     Ideally find most efficient way to class elements for styling.
-    
-## Flatten groups
-	Remove groups that aren't adding properties, such as animations or transforms

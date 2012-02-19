@@ -43,6 +43,7 @@ default_styles = set([
 ])
 
 position_attributes = {"rect":    (["x", "y"]),
+                       "tspan":   (["x", "y"]),
                        "circle":  (["cx", "cy"]),
                        "ellipse": (["cx", "cy"]),
                        "line":    (["x1", "y1", "x2", "y2"])}
@@ -66,9 +67,31 @@ class CleanSVG:
         self.root = self.tree.getroot()
     
     def analyse(self):
+        """ Search for namespaces. Will do more later """
+        
         print "Namespaces:"
         for ns, link in self.root.nsmap.iteritems():
             print "  %s: %s" % (ns, link)
+            
+    def removeGroups(self):
+        """ Remove groups with no attributes """
+        
+        for element in self.tree.iter():
+            if not isinstance(element.tag, basestring):
+                continue
+            
+            element_type = element.tag.split('}')[1]
+            
+            if element_type == 'g' and not element.keys():
+                parent = element.getparent()
+                if parent is not None:
+                    parent_postion = parent.index(element)
+                    
+                    # Move children outside of group
+                    for i, child in enumerate(element, parent_postion):
+                        parent.insert(i, child)
+                        
+                    del parent[i]
         
     def write(self, filename):
         """ Write current SVG to a file. """
@@ -95,8 +118,7 @@ class CleanSVG:
         self.root.insert(0, style_element)
         style_text = '\n'
         
-        # Should order styles
-        for styles, style_class in self.styles.iteritems():
+        for styles, style_class in sorted(self.styles.iteritems(), key=lambda (k,v): v):
             style_text += "\t.%s{\n" % style_class
             for (style_id, style_value) in styles:
                 style_text += '\t\t%s:\t%s;\n' % (style_id, style_value)
@@ -230,7 +252,7 @@ class CleanSVG:
         return str_number
 
     def _translateElement(self, element, delta):
-        print " - translate by: (%s, %s)" % delta
+        #print " - translate by: (%s, %s)" % delta
         delta = map(float, delta)
         element_type = element.tag.split('}')[1]
         coords = position_attributes.get(element_type)
@@ -280,13 +302,14 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.analyse()
-    #svg.removeAttributes('id')
-    #svg.removeNamespace('sodipodi')
-    #svg.extractStyles()
-    #svg.setDecimalPlaces(1)
-    #svg.applyTransforms()
-    #svg.write('%s_test.svg' % filename[:-4])
+    svg.removeAttributes('id')
+    svg.removeNamespace('sodipodi')
+    svg.removeNamespace('inkscape')
+    svg.removeGroups()
+    svg.extractStyles()
+    svg.setDecimalPlaces(1)
+    svg.applyTransforms()
+    svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
     import sys
