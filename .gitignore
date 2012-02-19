@@ -5,3 +5,6 @@ compiled files #
 # OS generated files #
 *~
 
+# Examples
+/examples/*  
+
