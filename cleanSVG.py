@@ -58,17 +58,34 @@ class CleanSVG:
         
         self.num_format = "%s"
         
-        if file:
+        if svgfile:
             self.parseFile(svgfile)
             
     def parseFile(self, filename):
         self.tree = etree.parse(filename)
         self.root = self.tree.getroot()
+    
+    def analyse(self):
+        print "Namespaces:"
+        for ns, link in self.root.nsmap.iteritems():
+            print "  %s: %s" % (ns, link)
         
     def write(self, filename):
+        """ Write current SVG to a file. """
+        
+        if not filename.endswith('.svg'):
+            filename += '.svg'
+        
         if self.styles:
             self._addStyleElement()
         self.tree.write(filename, pretty_print=True)
+        
+    def toString(self):
+        """ Return a string of the current SVG """
+        
+        if self.styles:
+            self._addStyleElement()
+        return etree.tostring(self.root)
     
     def _addStyleElement(self):
         """ Insert a CSS style element containing information 
@@ -154,6 +171,9 @@ class CleanSVG:
             if "style" in element.keys():
                 styles = element.attrib["style"].split(';')
                 style_list = [tuple(style.split(':')) for style in styles]
+
+                # Ensure styling is in the form: (key, value)
+                style_list = [style for style in style_list if len(style)==2]
             
                 # Remove pointless styles, e.g. opacity = 1
                 for default_style in default_styles & set(style_list):
@@ -260,12 +280,13 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename)
+    svg.analyse()
     #svg.removeAttributes('id')
     #svg.removeNamespace('sodipodi')
     #svg.extractStyles()
-    svg.setDecimalPlaces(1)
-    svg.applyTransforms()
-    svg.write('%s_test.svg' % filename[:-4])
+    #svg.setDecimalPlaces(1)
+    #svg.applyTransforms()
+    #svg.write('%s_test.svg' % filename[:-4])
     
 if __name__ == "__main__":
     import sys
