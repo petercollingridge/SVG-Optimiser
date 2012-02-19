@@ -4,6 +4,7 @@ from lxml import etree
 import re
 
 # Regex
+re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
 re_path_coords = re.compile('[a-zA-Z]')
@@ -75,24 +76,27 @@ class CleanSVG:
             
     def removeGroups(self):
         """ Remove groups with no attributes """
+        # Doesn't work for nested groups
         
         for element in self.tree.iter():
             if not isinstance(element.tag, basestring):
                 continue
             
             element_type = element.tag.split('}')[1]
-            
             if element_type == 'g' and not element.keys():
                 parent = element.getparent()
                 if parent is not None:
                     parent_postion = parent.index(element)
-                    
+                    print
+                    print parent
                     # Move children outside of group
                     for i, child in enumerate(element, parent_postion):
+                        print i
+                        print "move %s to %s" % (child, i)
                         parent.insert(i, child)
                         
-                    del parent[i]
-        
+                    #del parent[i]
+    
     def write(self, filename):
         """ Write current SVG to a file. """
         
@@ -227,10 +231,35 @@ class CleanSVG:
             if 'transform' in element.keys():
                 transform = element.get('transform')
                 
+                element_type = element.tag.split('}')[1]
+                if element_type == 'g':
+                    self._applyGroupTransforms(element)
+                
                 if "translate" in transform:
                     translation = re_translate.search(transform)
                     if translation:
                         self._translateElement(element, translation.group(1,2))
+    
+    def _applyGroupTransforms(self, group_element):
+        
+        # Ensure all child elements are paths
+        children = [child for child in group_element if isinstance(child.tag, basestring)]
+        if any((child.tag.split('}')[1] != 'path' for child in children)):
+            return
+            
+        # Get list of transformation in reverse order
+        # Should combine into a matrix first
+        transform_attr = group_element.get('transform')
+        transformations = re_transform.findall(transform_attr)
+        transformations.reverse()
+        
+        for transformation in transformations:
+            if transformation[0] == 'translate':
+                delta = map(float, transformation[1:])
+                
+                for child in children:
+                    print transformation
+                    self._translatePath(child, delta)
     
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
@@ -271,24 +300,26 @@ class CleanSVG:
             del element.attrib["transform"]
             
         elif "d" in element.keys():
-            delta.append(0)
-            commands = self._parsePath(element.get("d"))
-
-            command_str = ""
-            for command, values in commands:
-                command_str += command
-                if command in path_commands:
-                    d = path_commands[command]
-                    
-                    for n, value in enumerate(values):
-                        command_str += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
-                else:
-                    command_str += " ".join(map(self._formatNumber, values))
-            
-            print command_str
-            element.set("d", command_str)
+            self._translatePath(element, delta)
             del element.attrib["transform"]
 
+    def _translatePath(self, path, delta):
+        delta.append(0) # add as a null value for flags
+        commands = self._parsePath(path.get("d"))
+
+        new_d = ""
+        for command, values in commands:
+            new_d += command
+            if command in path_commands:
+                d = path_commands[command]
+                
+                for n, value in enumerate(values):
+                    new_d += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
+            else:
+                new_d += " ".join(map(self._formatNumber, values))
+
+        path.set("d", new_d)
+    
     def _parsePath(self, d):
         commands = []
         split_commands = re_path_split.split(d)
