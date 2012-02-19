@@ -4,7 +4,7 @@ from lxml import etree
 import re
 
 # Regex
-re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
+re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*),?\s*(-?\d+\.?\d*)?\)')
 re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
 re_coord_split = re.compile('\s+|,')
 re_path_coords = re.compile('[a-zA-Z]')
@@ -48,6 +48,8 @@ position_attributes = {"rect":    (["x", "y"]),
                        "circle":  (["cx", "cy"]),
                        "ellipse": (["cx", "cy"]),
                        "line":    (["x1", "y1", "x2", "y2"])}
+
+scaling_attributes = {"rect":    (["x", "y", "width", "height"]),}
 
 class CleanSVG:
     def __init__(self, svgfile=None):
@@ -230,36 +232,43 @@ class CleanSVG:
         for element in self.tree.iter():
             if 'transform' in element.keys():
                 transform = element.get('transform')
+                transformations = re_transform.findall(transform)
+                transformations.reverse()
                 
                 element_type = element.tag.split('}')[1]
                 if element_type == 'g':
-                    self._applyGroupTransforms(element)
+                    self._applyGroupTransforms(element, transformations)
                 
-                if "translate" in transform:
-                    translation = re_translate.search(transform)
-                    if translation:
-                        self._translateElement(element, translation.group(1,2))
+                sucessful_transformation = False
+                for transformation in transformations:
+                    delta = [float(n) for n in transformation[1:] if n]
+                    if transformation[0] == 'translate':
+                        sucessful_transformation = self._translateElement(element, delta)
+                    elif transformation[0] == 'scale':
+                        sucessful_transformation = self._scaleElement(element, delta)
+                
+                # Doesn't take into account if one transformation isn't sucessful
+                if sucessful_transformation:
+                    del element.attrib["transform"]
     
-    def _applyGroupTransforms(self, group_element):
+    def _applyGroupTransforms(self, group_element, transformations):
         
         # Ensure all child elements are paths
         children = [child for child in group_element if isinstance(child.tag, basestring)]
         if any((child.tag.split('}')[1] != 'path' for child in children)):
             return
             
-        # Get list of transformation in reverse order
-        # Should combine into a matrix first
-        transform_attr = group_element.get('transform')
-        transformations = re_transform.findall(transform_attr)
-        transformations.reverse()
+        f_dict = {'translate': self._translatePath, 'scale': self._scalePath}
         
         for transformation in transformations:
-            if transformation[0] == 'translate':
-                delta = map(float, transformation[1:])
-                
+            delta = [float(n) for n in transformation[1:] if n]
+            
+            trans_f = f_dict.get(transformation[0])
+            if trans_f:
                 for child in children:
-                    print transformation
-                    self._translatePath(child, delta)
+                    trans_f(child, delta)
+        
+        del group_element.attrib["transform"]
     
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
@@ -282,7 +291,6 @@ class CleanSVG:
 
     def _translateElement(self, element, delta):
         #print " - translate by: (%s, %s)" % delta
-        delta = map(float, delta)
         element_type = element.tag.split('}')[1]
         coords = position_attributes.get(element_type)
 
@@ -290,18 +298,31 @@ class CleanSVG:
             for i, coord_name in enumerate(coords):
                 new_coord = float(element.get(coord_name, 0)) + delta[i % 2]
                 element.set(coord_name, self._formatNumber(new_coord))
-            del element.attrib["transform"]
-                
+            return True
+            
         elif "points" in element.keys():
             values = [float(v) + delta[i % 2] for i, v in enumerate(re_coord_split.split(element.get("points")))]
             str_values = map(self._formatNumber, values)
             point_list = " ".join((str_values[i] + "," + str_values[i+1] for i in range(0, len(str_values), 2)))
             element.set("points", point_list)
-            del element.attrib["transform"]
+            return True
             
         elif "d" in element.keys():
             self._translatePath(element, delta)
-            del element.attrib["transform"]
+            return True
+
+    def _scaleElement(self, element, delta):
+        if len(delta) == 1:
+            delta = [delta[0], delta[0]]        
+        
+        element_type = element.tag.split('}')[1]
+        coords = scaling_attributes.get(element_type)
+        
+        if coords:
+            for i, coord_name in enumerate(coords):
+                new_coord = float(element.get(coord_name, 0)) * delta[i % 2]
+                element.set(coord_name, self._formatNumber(new_coord))
+            return True
 
     def _translatePath(self, path, delta):
         delta.append(0) # add as a null value for flags
@@ -312,9 +333,28 @@ class CleanSVG:
             new_d += command
             if command in path_commands:
                 d = path_commands[command]
-                
                 for n, value in enumerate(values):
                     new_d += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
+            else:
+                new_d += " ".join(map(self._formatNumber, values))
+
+        path.set("d", new_d)
+        
+    def _scalePath(self, path, delta):
+        if len(delta) == 1:
+            delta = [delta[0], delta[0], 0]
+        elif len(delta) == 2:
+            delta.append(0) # add as a null value for flags
+            
+        commands = self._parsePath(path.get("d"))
+
+        new_d = ""
+        for command, values in commands:
+            new_d += command
+            if command in path_commands:
+                d = path_commands[command]
+                for n, value in enumerate(values):
+                    new_d += "%s " % self._formatNumber(value * delta[ d[n % len(d)]])
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
@@ -338,7 +378,7 @@ def main(filename):
     svg.removeNamespace('inkscape')
     svg.removeGroups()
     svg.extractStyles()
-    svg.setDecimalPlaces(1)
+    svg.setDecimalPlaces(2)
     svg.applyTransforms()
     svg.write('%s_test.svg' % filename[:-4])
     
