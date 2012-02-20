@@ -260,15 +260,17 @@ class CleanSVG:
             
         f_dict = {'translate': self._translatePath, 'scale': self._scalePath}
         
+        sucessful_transformation = False
         for transformation in transformations:
             delta = [float(n) for n in transformation[1:] if n]
             
             trans_f = f_dict.get(transformation[0])
             if trans_f:
                 for child in children:
-                    trans_f(child, delta)
+                    sucessful_transformation = trans_f(child, delta)
         
-        del group_element.attrib["transform"]
+        if sucessful_transformation:
+            del group_element.attrib["transform"]
     
     def _formatNumber(self, number):
         """ Convert a number to a string representation 
@@ -339,6 +341,7 @@ class CleanSVG:
                 new_d += " ".join(map(self._formatNumber, values))
 
         path.set("d", new_d)
+        return True
         
     def _scalePath(self, path, delta):
         if len(delta) == 1:
@@ -359,6 +362,7 @@ class CleanSVG:
                 new_d += " ".join(map(self._formatNumber, values))
 
         path.set("d", new_d)
+        return True
     
     def _parsePath(self, d):
         commands = []
