@@ -2,6 +2,7 @@
 
 from lxml import etree
 import re
+import os
 
 # Regex
 re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*),?\s*(-?\d+\.?\d*)?\)')
@@ -22,6 +23,18 @@ path_commands = {
     "A": (-1, -1, -1, -1, -1, 0, 1),    
     "C": (0, 1, 0, 1, 0, 1)
 }
+
+# How relative commands are scaled
+scale_commands = {
+    "m": (0, 1),
+    "l": (0, 1),
+    "t": (0, 1),
+    "h": (0),
+    "v": (1),
+    "a": (0, 1, -1, -1, -1, 0, 1),
+    "c": (0, 1, 0, 1, 0, 1)
+}
+scale_commands.update(path_commands)
 
 # Attribute names
 value_attributes = ["x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "width", "height"]
@@ -50,6 +63,59 @@ position_attributes = {"rect":    (["x", "y"]),
                        "line":    (["x1", "y1", "x2", "y2"])}
 
 scaling_attributes = {"rect":    (["x", "y", "width", "height"]),}
+
+STYLES = set([
+"alignment-baseline",
+"baseline-shift",
+"clip-path",
+"clip-rule",
+"color-interpolation",
+"color-interpolation-filters",
+"color-profile",
+"color-rendering",
+"direction",
+"dominant-baseline",
+"fill",
+"fill-opacity",
+"fill-rule",
+"font",
+"font-family",
+"font-size",
+"font-size-adjust",
+"font-stretch",
+"font-style",
+"font-variant",
+"font-weight",
+"glyph-orientation-horizontal",
+"glyph-orientation-vertical",
+"image-rendering",
+"kerning",
+"letter-spacing",
+"marker",
+"marker-end",
+"marker-mid",
+"marker-start",
+"mask",
+"opacity",
+"pointer-events",
+"shape-rendering",
+"stop-color",
+"stop-opacity",
+"stroke",
+"stroke-dasharray",
+"stroke-dashoffset",
+"stroke-linecap",
+"stroke-linejoin",
+"stroke-miterlimit",
+"stroke-opacity",
+"stroke-width",
+"text-anchor",
+"text-decoration",
+"text-rendering",
+"unicode-bidi",
+"word-spacing",
+"writing-mode",
+])
 
 class CleanSVG:
     def __init__(self, svgfile=None):
@@ -149,9 +215,14 @@ class CleanSVG:
             tag = element.tag.split('}')[1]
             
             if tag == "polyline" or tag == "polygon":
-                coords = map(self._formatNumber, re_coord_split.split(element.get("points")))
-                point_list = " ".join((coords[i] + "," + coords[i+1] for i in range(0, len(coords), 2)))
-                element.set("points", point_list)
+                values = re_coord_split.split(element.get("points"))
+                formatted_values = [self._formatNumber(x) for x in values if x]
+                try:
+                    point_list = " ".join((formatted_values[i] + "," + formatted_values[i+1] for i in range(0, len(formatted_values), 2)))
+                    element.set("points", point_list)
+                except IndexError:
+                    print "Could not parse points list"
+                    pass
                 
             elif tag == "path":
                 coords = map(self._formatNumber, re_coord_split.split(element.get("d")))
@@ -193,13 +264,21 @@ class CleanSVG:
             del self.root.nsmap[namespace]
     
     def extractStyles(self):
-        """ Remove style attribute and but in <style> element as CSS. """
+        """ Remove style attributes and values of the style attribute and put in <style> element as CSS. """
         
         for element in self.tree.iter():
+            style_list = []
+
             if "style" in element.keys():
                 styles = element.attrib["style"].split(';')
-                style_list = [tuple(style.split(':')) for style in styles]
+                style_list.extend([tuple(style.split(':')) for style in styles])
+                del element.attrib["style"]
 
+            for attribute in STYLES & set(element.attrib.keys()):
+                style_list.append((attribute, element.attrib[attribute]))
+                del element.attrib[attribute]
+
+            if len(style_list) > 0:
                 # Ensure styling is in the form: (key, value)
                 style_list = [style for style in style_list if len(style)==2]
             
@@ -213,7 +292,7 @@ class CleanSVG:
                     if number:
                         clean_number = self._formatNumber(number.group(1))
                         style_list[i] = (style_name, clean_number + number.group(2))
-                    
+                
                 style_tuple = tuple(style_list)
                 if style_tuple not in self.styles:
                     style_class = "style%d" % self.style_counter
@@ -224,23 +303,22 @@ class CleanSVG:
                     
                 # Should test to see whether there is already a class
                 element.set("class", style_class)
-                del element.attrib["style"]
     
     def applyTransforms(self):
         """ Apply transforms to element coordinates. """
         
         for element in self.tree.iter():
             if 'transform' in element.keys():
-                transform = element.get('transform')
-                transformations = re_transform.findall(transform)
-                transformations.reverse()
+                all_transforms = element.get('transform')
+                transform_list = re_transform.findall(all_transforms)
+                transform_list.reverse()
                 
                 element_type = element.tag.split('}')[1]
                 if element_type == 'g':
-                    self._applyGroupTransforms(element, transformations)
+                    self._applyGroupTransforms(element, transform_list)
                 
                 sucessful_transformation = False
-                for transformation in transformations:
+                for transformation in transform_list:
                     delta = [float(n) for n in transformation[1:] if n]
                     if transformation[0] == 'translate':
                         sucessful_transformation = self._translateElement(element, delta)
@@ -263,7 +341,7 @@ class CleanSVG:
         sucessful_transformation = False
         for transformation in transformations:
             delta = [float(n) for n in transformation[1:] if n]
-            
+
             trans_f = f_dict.get(transformation[0])
             if trans_f:
                 for child in children:
@@ -319,11 +397,15 @@ class CleanSVG:
         
         element_type = element.tag.split('}')[1]
         coords = scaling_attributes.get(element_type)
-        
+
         if coords:
             for i, coord_name in enumerate(coords):
                 new_coord = float(element.get(coord_name, 0)) * delta[i % 2]
                 element.set(coord_name, self._formatNumber(new_coord))
+            return True
+
+        elif "d" in element.keys():
+            self._scalePath(element, delta)
             return True
 
     def _translatePath(self, path, delta):
@@ -354,10 +436,10 @@ class CleanSVG:
         new_d = ""
         for command, values in commands:
             new_d += command
-            if command in path_commands:
-                d = path_commands[command]
+            if command in scale_commands:
+                command_v = scale_commands[command]
                 for n, value in enumerate(values):
-                    new_d += "%s " % self._formatNumber(value * delta[ d[n % len(d)]])
+                    new_d += "%s " % self._formatNumber(value * delta[ command_v[n % len(command_v)]])
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
@@ -377,14 +459,16 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename)
-    svg.removeAttributes('id')
+    #svg.removeAttributes('id')
     svg.removeNamespace('sodipodi')
     svg.removeNamespace('inkscape')
     svg.removeGroups()
-    svg.extractStyles()
     svg.setDecimalPlaces(2)
+    svg.extractStyles()
     svg.applyTransforms()
-    svg.write('%s_test.svg' % filename[:-4])
+
+    name = os.path.splitext(filename)[0]
+    svg.write('%s_test.svg' % name)
     
 if __name__ == "__main__":
     import sys
@@ -392,8 +476,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        import os
         #main(os.path.join('examples', 'translations.svg'))
         #main(os.path.join('examples', 'styles.svg'))
         main(os.path.join('examples', 'paths.svg'))
-        #main(os.path.join('examples', 'Chlamydomonas.svg'))
