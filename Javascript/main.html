@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+	<head>
+    <title>Simplify an SVG</title>
+		<script type="text/javascript" src="jquery.js"></script>
+    <script type='text/javascript' src='svg-optimiser.js'></script>
+		<script type='text/javascript' src='optimiser_tests.js'></script>
+    <link type="text/css" rel="stylesheet" href="main.css" />
+	<head>
+
+	<body>
+
+	<h1>Apply SVG Transformations</h1>
+    <div class="page-content">
+      <p>See the result of applying a transformation to SVG elements. Click on the currently implemented items to show an example.</p>
+
+      <h2>Input</h2>
+      <textarea id="input-svg" class="input-output-box"
+                cols="96" rows="3"
+                title="Enter SVG elements here"
+                placeholder='SVG element, e.g. <circle cx="10" cy="20" r="5" />' ></textarea>
+      <div>
+        <input id="input-transformation" class="input-output-box"
+               size="50"
+               title="Enter a transformation here"
+               placeholder="Transformation, e.g. translate(20, 30)" />
+        <input type="submit" id="apply-button" value="Apply" />
+      </div>
+      <div id="error-message"> </div>
+      
+      <h2>Output</h2>
+      <div id="output-svg" class="input-output-box" > </div>
+      
+      <div>
+        <h2>Currently implemented</h2>
+        <p>These are the elements and transformations that are currently implemented.
+           Click on an example to add it to the input.
+           Note that not all transformations can be applied to every element.
+           For example, scaling a circle differently in two dimensions will not result in a circle so has not been implemented.
+           At present, only one transformation can be applied at a time.
+           You can apply it to multiple SVG elements as long as they are not nested (so no <g> elements).
+           Scaling an element will not effect its stroke width.
+        </p>
+
+        <div>
+          <div class="implementation-list">
+            <h3>Elements</h3>
+            <ul>
+              <li class="implemented" onclick="addExampleElement('rect')">Rect</li>
+              <li class="implemented" onclick="addExampleElement('circle')">Circle</li>
+              <li class="implemented" onclick="addExampleElement('ellipse')">Ellipse</li>
+              <li class="implemented" onclick="addExampleElement('line')">Line</li>
+              <li class="implemented" onclick="addExampleElement('polyline')">Polyline</li>
+              <li class="implemented" onclick="addExampleElement('polygon')">Polygon</li>
+            </ul>
+          </div>
+          <div class="implementation-list">
+            <h3>Path sections</h3>
+            <ul>
+              <li class="implemented" onclick="addExampleElement('path_MLl')">M/m, L/l, Z/z</li>
+              <li class="implemented" onclick="addExampleElement('path_HhVv')">H/h, V/v</li>
+              <li class="implemented" onclick="addExampleElement('path_QqTt')">Q/q, T/t</li>
+              <li class="implemented" onclick="addExampleElement('path_CcSs')">C/c, S/s</li>
+              <li class="not-implemented">A/a</li>
+            </ul>
+          </div>
+          <div class="implementation-list">
+            <h3>Transformations</h3>
+            <ul>
+              <li class="implemented" onclick="addExampleTransformation('1D translate')">1D Translation</li>
+              <li class="implemented" onclick="addExampleTransformation('2D translate')">2D Translation</li>
+              <li class="implemented" onclick="addExampleTransformation('1D scale')">1D Scale</li>
+              <li class="implemented" onclick="addExampleTransformation('2D scale')">2D Scale</li>
+              <li class="not-implemented">Rotation</li>
+              <li class="not-implemented">Skew X</li>
+              <li class="not-implemented">Skew Y</li>
+            </ul>
+          </div>
+          <div class="implementation-list">
+            <h3>Matrix transformations</h3>
+            <ul>
+              <li class="implemented" onclick="addExampleTransformation('translate matrix')">Translation matrix</li>
+              <li class="implemented" onclick="addExampleTransformation('scale matrix')">Scaling matrix</li>
+              <li class="implemented" onclick="addExampleTransformation('translate and scale matrix')">Translate and scale matrix</li>
+              <li class="not-implemented">Rotation matrix</li>
+              <li class="not-implemented">Skew X matrix</li>
+              <li class="not-implemented">Skew Y matrix</li>
+              <li class="implemented" onclick="addExampleTransformation('matrix transformation')">General matrix</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div id="run-tests-button" class="text-button">Run Tests</div>
+    </div>
+
+    <div class="footer">This website was created by <a href="http://www.petercollingridge.co.uk">Peter Collingridge</a>.</div>
+
+  </body>
+</html>

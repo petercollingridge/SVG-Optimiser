@@ -1,0 +1,130 @@
+body {
+    font-family: Verdana, helvetica, sans-serif;
+}
+
+h1 {
+    width: 880px;
+    font-size: 36px;
+    border-bottom: 1px solid #aaa;
+    padding-left: 20px;
+    padding-bottom: 2px;
+    margin-top: 12px;
+    margin-bottom: 0;
+    color: #111;
+    text-shadow: 1px 1px 0px #e1e1e8;
+}
+
+h2 {
+    font-weight: normal;
+    font-size: 20px;
+    padding-left: 8px;
+    padding-bottom: 2px;
+    color: #222;
+    border-bottom: 1px solid #888;
+    margin-top: 24px;
+    margin-bottom: 5px;
+}
+
+h3 {
+    font-size: 13px;
+    padding-left: 8px;
+    padding-right: 40px;
+    color: #222;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    clear: both;
+}
+
+p {
+    margin: 5px;
+    line-height: 19px;
+    text-align: justify;
+}
+
+textarea {
+    margin-bottom: 0;
+    outline: none;
+}
+
+a:link { 
+    color: #86d62a;
+    text-decoration: none;
+}
+
+a:visited { 
+    color: #86d62a;
+}
+
+a:hover { 
+    text-decoration: underline;
+}
+
+.page-content {
+    font-size: 13px;
+    width: 800px;
+    padding-left: 40px;
+}
+
+.input-output-box {
+    font-family: Fixed, "Courier New", monospace;
+    border: 1px #565752 solid;
+    padding: 6px 4px 6px 10px;
+}
+
+#output-svg {
+    height: 50px;
+    overflow: auto;
+    resize: both;
+}
+
+#apply-button {
+    font-size: 14px;
+	padding: 4px 10px 4px 10px;
+}
+
+#error-message {
+    color: red;
+}
+
+.implementation-list {
+    float: left;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.implementation-list>ul {
+    font-style: italic;
+    list-style-type: none;
+    padding-left: 16px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.implementation-list li {
+    padding: 2px 6px 2px 2px;
+}
+
+.implemented:hover {
+    cursor: pointer;
+    background: #ddd;
+}
+
+.not-implemented {
+    color: #888;
+}
+
+.text-button {
+    color: #2048a8;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px 4px 4px 10px;
+    clear: both;
+}
+
+.footer {
+    font-size: 10px;
+    padding-top: 16px;
+    padding-left: 20px;
+    padding-bottom: 1px;
+    clear: both;
+}
