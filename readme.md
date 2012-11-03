@@ -1,5 +1,7 @@
 Python program to clean up SVG files, particularly those created by Inkscape or Illustrator
 
+
+
 # --- Current Functionality ---
 
 ## Remove attributes
@@ -103,3 +105,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 ## CSS stlying
 	Need to check whether style element already exists and whether class names already exist.
     Ideally find most efficient way to class elements for styling.
+    
+## License
+
+	
