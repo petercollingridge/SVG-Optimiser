@@ -118,7 +118,8 @@ STYLES = set([
 ])
 
 class CleanSVG:
-    def __init__(self, svgfile=None):
+    def __init__(self, svgfile=None, verbose=False):
+        self._verbose = verbose
         self.tree = None
         self.root = None
         
@@ -249,17 +250,27 @@ class CleanSVG:
         """ Remove all attributes of a given namespace. """
         
         nslink = self.root.nsmap.get(namespace)
+
+        if self._verbose:
+            print "\nRemoving namespace, %s" % namespace
+            if nslink:
+                print " - Link: %s" % nslink
+
         if nslink:
             nslink = "{%s}" % nslink
             length = len(nslink)
-            
+
             for element in self.tree.iter():
                 if element.tag[:length] == nslink:
                     self.root.remove(element)
+                    if self._verbose:
+                        print " - removed element: %s" % element.tag[length:]
                 
                 for attribute in element.attrib.keys():
                     if attribute[:length] == nslink:
                         del element.attrib[attribute]
+                        if self._verbose:
+                            print " - removed attribute from tag: %s" % element.tag
                 
             del self.root.nsmap[namespace]
     
@@ -458,7 +469,7 @@ class CleanSVG:
         return commands
 
 def main(filename):
-    svg = CleanSVG(filename)
+    svg = CleanSVG(filename, verbose=True)
     #svg.removeAttributes('id')
     svg.removeNamespace('sodipodi')
     svg.removeNamespace('inkscape')
@@ -478,4 +489,4 @@ if __name__ == "__main__":
     else:
         #main(os.path.join('examples', 'translations.svg'))
         #main(os.path.join('examples', 'styles.svg'))
-        main(os.path.join('examples', 'paths.svg'))
+        main(os.path.join('examples', 'EagleHead.svg'))
