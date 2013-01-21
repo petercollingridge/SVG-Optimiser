@@ -238,13 +238,17 @@ class CleanSVG:
                     if attribute in value_attributes:
                         element.set(attribute, self._formatNumber(element.get(attribute)))
 
-    def removeAttributes(self, *attributes):
-        """ Remove all instances of a given list of attributes. """
-        
+    def removeAttribute(self, attribute, exception_list=None):
+        """ Remove all instances of an attribute ignoring any with a value in the exception list. """
+
+        if exception_list is None: exception_list = []
+
+        if self._verbose: print '\nRemoving attribute: %s' % attribute
+
         for element in self.tree.iter():
-            for attribute in attributes:
-                if attribute in element.attrib.keys():
-                    del element.attrib[attribute]
+            if attribute in element.attrib.keys() and element.attrib[attribute] not in exception_list:
+                if self._verbose: print ' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute])
+                del element.attrib[attribute]
     
     def removeNamespace(self, namespace):
         """ Remove all attributes of a given namespace. """
@@ -470,10 +474,10 @@ class CleanSVG:
 
 def main(filename):
     svg = CleanSVG(filename, verbose=True)
-    #svg.removeAttributes('id')
+    svg.removeAttribute('id')
     svg.removeNamespace('sodipodi')
     svg.removeNamespace('inkscape')
-    svg.removeGroups()
+    #svg.removeGroups()
     svg.setDecimalPlaces(2)
     svg.extractStyles()
     svg.applyTransforms()
