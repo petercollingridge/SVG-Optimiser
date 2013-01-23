@@ -3,6 +3,7 @@
 from lxml import etree
 import re
 import os
+import sys
 
 # Regex
 re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*),?\s*(-?\d+\.?\d*)?\)')
@@ -133,7 +134,12 @@ class CleanSVG:
             self.parseFile(svgfile)
             
     def parseFile(self, filename):
-        self.tree = etree.parse(filename)
+        try:
+            self.tree = etree.parse(filename)
+        except IOError:
+            print "Unable to open file", filename
+            sys.exit(1)
+
         self.root = self.tree.getroot()
     
     def analyse(self):
@@ -202,12 +208,7 @@ class CleanSVG:
     def setDecimalPlaces(self, decimal_places):
         """ Round attribute numbers to a given number of decimal places. """
         
-        if decimal_places == 0:
-            self.num_format = "%d"
-        elif decimal_places > 0:
-            self.num_format = "%%.%df" % decimal_places
-        else:
-            self.num_format = "%s"
+        self.num_format = "%%.%df" % decimal_places
         
         for element in self.tree.iter():
             if not isinstance(element.tag, basestring):
@@ -250,6 +251,24 @@ class CleanSVG:
                 if self._verbose: print ' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute])
                 del element.attrib[attribute]
     
+    def removeNonDefIDAttributes(self):
+        """ Go through def elements and find IDs referred to, then remove all IDs except those. """
+
+        def_IDs = []
+
+        for element in self.tree.iter():
+            if not isinstance(element.tag, basestring):
+                continue
+            
+            tag = element.tag.split('}')[1]
+            if tag == 'defs':
+                for child in element.getchildren():
+                    for key, value in child.attrib.iteritems():
+                        if key.endswith('href'):
+                            def_IDs.append(value)
+
+        self.removeAttribute('id', exception_list=def_IDs)
+
     def removeNamespace(self, namespace):
         """ Remove all attributes of a given namespace. """
         
@@ -433,7 +452,7 @@ class CleanSVG:
             if command in path_commands:
                 d = path_commands[command]
                 for n, value in enumerate(values):
-                    new_d += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
+                    new_d += "%s" % self._formatNumber(value + delta[ d[n % len(d)]])
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
@@ -473,10 +492,12 @@ class CleanSVG:
         return commands
 
 def main(filename):
-    svg = CleanSVG(filename, verbose=True)
-    svg.removeAttribute('id')
+    svg = CleanSVG(filename, verbose=False)
+    #svg.removeAttribute('id')
     svg.removeNamespace('sodipodi')
     svg.removeNamespace('inkscape')
+    svg.removeNamespace('xml')
+    svg.removeNonDefIDAttributes()
     #svg.removeGroups()
     svg.setDecimalPlaces(2)
     svg.extractStyles()
