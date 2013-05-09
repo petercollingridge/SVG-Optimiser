@@ -452,7 +452,7 @@ class CleanSVG:
             if command in path_commands:
                 d = path_commands[command]
                 for n, value in enumerate(values):
-                    new_d += "%s" % self._formatNumber(value + delta[ d[n % len(d)]])
+                    new_d += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
