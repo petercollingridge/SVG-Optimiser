@@ -129,6 +129,7 @@ class CleanSVG:
         self.style_counter = 0
         
         self.num_format = "%s"
+        self.removeWhitespace = True
         
         if svgfile:
             self.parseFile(svgfile)
@@ -178,16 +179,22 @@ class CleanSVG:
         if not filename.endswith('.svg'):
             filename += '.svg'
         
-        if self.styles:
-            self._addStyleElement()
-        self.tree.write(filename, pretty_print=True)
+        with open(filename, 'w') as f:
+            f.write(self.toString(True))
         
-    def toString(self):
+    def toString(self, pretty_print=False):
         """ Return a string of the current SVG """
         
         if self.styles:
             self._addStyleElement()
-        return etree.tostring(self.root)
+
+        if self.removeWhitespace:
+            svg_string = etree.tostring(self.root)
+            svg_string = re.sub(r'\n\s*' , "", svg_string)
+        else:
+            svg_string = etree.tostring(self.root, pretty_print=pretty_print)
+        
+        return svg_string
     
     def _addStyleElement(self):
         """ Insert a CSS style element containing information 
@@ -452,7 +459,7 @@ class CleanSVG:
             if command in path_commands:
                 d = path_commands[command]
                 for n, value in enumerate(values):
-                    new_d += "%s" % self._formatNumber(value + delta[ d[n % len(d)]])
+                    new_d += "%s " % self._formatNumber(value + delta[d[n % len(d)]])
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
@@ -500,8 +507,10 @@ def main(filename):
     svg.removeNonDefIDAttributes()
     #svg.removeGroups()
     svg.setDecimalPlaces(2)
-    svg.extractStyles()
+    #svg.extractStyles()
     svg.applyTransforms()
+
+    #svg.removeWhitespace = False;
 
     name = os.path.splitext(filename)[0]
     svg.write('%s_test.svg' % name)
@@ -512,6 +521,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        #main(os.path.join('examples', 'translations.svg'))
+        main(os.path.join('examples', 'paths.svg'))
         #main(os.path.join('examples', 'styles.svg'))
-        main(os.path.join('examples', 'EagleHead.svg'))
+        #main(os.path.join('examples', 'EagleHead.svg'))
