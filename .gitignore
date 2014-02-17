@@ -1,10 +1,10 @@
 compiled files #
 ##################
 *.pyc
+venv
 
 # OS generated files #
 *~
 
 # Examples
 /examples/*  
-
