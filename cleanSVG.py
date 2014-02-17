@@ -459,11 +459,7 @@ class CleanSVG:
             if command in path_commands:
                 d = path_commands[command]
                 for n, value in enumerate(values):
-<<<<<<< HEAD
                     new_d += "%s " % self._formatNumber(value + delta[d[n % len(d)]])
-=======
-                    new_d += "%s " % self._formatNumber(value + delta[ d[n % len(d)]])
->>>>>>> e7ff8b4f89267cf0e1ae23e8872743ecedb4489e
             else:
                 new_d += " ".join(map(self._formatNumber, values))
 
@@ -527,8 +523,3 @@ if __name__ == "__main__":
     else:
         main(os.path.join('examples', 'paths.svg'))
         #main(os.path.join('examples', 'styles.svg'))
-<<<<<<< HEAD
-        #main(os.path.join('examples', 'EagleHead.svg'))
-=======
-        main(os.path.join('examples', 'EagleHead.svg'))
->>>>>>> e7ff8b4f89267cf0e1ae23e8872743ecedb4489e
