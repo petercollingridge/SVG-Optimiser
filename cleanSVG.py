@@ -339,7 +339,7 @@ class CleanSVG:
                 
                 style_tuple = tuple(style_list)
                 if style_tuple not in self.styles:
-                    style_class = self._intToId(self.style_counter)
+                    style_class = self._intToId(self.style_counter, style_chars)
                     self.styles[style_tuple] = style_class
                     self.style_counter += 1
                 else:
