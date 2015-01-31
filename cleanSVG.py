@@ -6,13 +6,13 @@ import os
 import sys
 
 # Regex
-re_transform = re.compile('([a-zA-Z]+)\((-?\d+\.?\d*),?\s*(-?\d+\.?\d*)?\)')
-re_translate = re.compile('\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
-re_coord_split = re.compile('\s+|,')
-re_path_coords = re.compile('[a-zA-Z]')
-re_path_split = re.compile('([ACHLMQSTVZachlmqstvz])')
-re_trailing_zeros = re.compile('\.(\d*?)(0+)$')
-re_length = re.compile('^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
+re_transform = re.compile(r'([a-zA-Z]+)\((-?\d+\.?\d*),?\s*(-?\d+\.?\d*)?\)')
+re_translate = re.compile(r'\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)')
+re_coord_split = re.compile(r'\s+|,')
+re_path_coords = re.compile(r'[a-zA-Z]')
+re_path_split = re.compile(r'([ACHLMQSTVZachlmqstvz])')
+re_trailing_zeros = re.compile(r'\.(\d*?)(0+)$')
+re_length = re.compile(r'^(\d+\.?\d*)\s*(em|ex|px|in|cm|mm|pt|pc|%|\w*)')
 
 # Path commands
 path_commands = {
@@ -138,7 +138,7 @@ class CleanSVG:
         try:
             self.tree = etree.parse(filename)
         except IOError:
-            print "Unable to open file", filename
+            print("Unable to open file", filename)
             sys.exit(1)
 
         self.root = self.tree.getroot()
@@ -146,29 +146,29 @@ class CleanSVG:
     def analyse(self):
         """ Search for namespaces. Will do more later """
         
-        print "Namespaces:"
-        for ns, link in self.root.nsmap.iteritems():
-            print "  %s: %s" % (ns, link)
+        print("Namespaces:")
+        for ns, link in self.root.nsmap.items():
+            print("  %s: %s" % (ns, link))
             
     def removeGroups(self):
         """ Remove groups with no attributes """
         # Doesn't work for nested groups
         
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, str):
                 continue
             
             element_type = element.tag.split('}')[1]
-            if element_type == 'g' and not element.keys():
+            if element_type == 'g' and not list(element.keys()):
                 parent = element.getparent()
                 if parent is not None:
                     parent_postion = parent.index(element)
-                    print
-                    print parent
+                    print()
+                    print(parent)
                     # Move children outside of group
                     for i, child in enumerate(element, parent_postion):
-                        print i
-                        print "move %s to %s" % (child, i)
+                        print(i)
+                        print("move %s to %s" % (child, i))
                         parent.insert(i, child)
                         
                     #del parent[i]
@@ -189,11 +189,12 @@ class CleanSVG:
             self._addStyleElement()
 
         if self.removeWhitespace:
-            svg_string = etree.tostring(self.root)
-            svg_string = re.sub(r'\n\s*' , "", svg_string)
+            svg_binary = etree.tostring(self.root)
+            svg_binary = re.sub(b'\n\s*', b"", svg_binary)
         else:
-            svg_string = etree.tostring(self.root, pretty_print=pretty_print)
-        
+            svg_binary = etree.tostring(self.root, pretty_print=pretty_print)
+        svg_string = svg_binary.decode('utf-8')
+
         return svg_string
     
     def _addStyleElement(self):
@@ -204,7 +205,7 @@ class CleanSVG:
         self.root.insert(0, style_element)
         style_text = '\n'
         
-        for styles, style_class in sorted(self.styles.iteritems(), key=lambda (k,v): v):
+        for styles, style_class in sorted(iter(self.styles.items()), key=lambda k_v: k_v[1]):
             style_text += "\t.%s{\n" % style_class
             for (style_id, style_value) in styles:
                 style_text += '\t\t%s:\t%s;\n' % (style_id, style_value)
@@ -218,7 +219,7 @@ class CleanSVG:
         self.num_format = "%%.%df" % decimal_places
         
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, str):
                 continue
             
             tag = element.tag.split('}')[1]
@@ -230,11 +231,11 @@ class CleanSVG:
                     point_list = " ".join((formatted_values[i] + "," + formatted_values[i+1] for i in range(0, len(formatted_values), 2)))
                     element.set("points", point_list)
                 except IndexError:
-                    print "Could not parse points list"
+                    print("Could not parse points list")
                     pass
                 
             elif tag == "path":
-                coords = map(self._formatNumber, re_coord_split.split(element.get("d")))
+                coords = list(map(self._formatNumber, re_coord_split.split(element.get("d"))))
                 coord_list = " ".join(coords)
                 element.set("d", coord_list)
                 #for coord in coords:
@@ -242,7 +243,7 @@ class CleanSVG:
                 #        print coord
                 
             else:
-                for attribute in element.attrib.keys():
+                for attribute in list(element.attrib.keys()):
                     if attribute in value_attributes:
                         element.set(attribute, self._formatNumber(element.get(attribute)))
 
@@ -251,11 +252,11 @@ class CleanSVG:
 
         if exception_list is None: exception_list = []
 
-        if self._verbose: print '\nRemoving attribute: %s' % attribute
+        if self._verbose: print('\nRemoving attribute: %s' % attribute)
 
         for element in self.tree.iter():
-            if attribute in element.attrib.keys() and element.attrib[attribute] not in exception_list:
-                if self._verbose: print ' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute])
+            if attribute in list(element.attrib.keys()) and element.attrib[attribute] not in exception_list:
+                if self._verbose: print(' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute]))
                 del element.attrib[attribute]
     
     def removeNonDefIDAttributes(self):
@@ -264,13 +265,13 @@ class CleanSVG:
         def_IDs = []
 
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, str):
                 continue
             
             tag = element.tag.split('}')[1]
             if tag == 'defs':
                 for child in element.getchildren():
-                    for key, value in child.attrib.iteritems():
+                    for key, value in child.attrib.items():
                         if key.endswith('href'):
                             def_IDs.append(value)
 
@@ -282,9 +283,9 @@ class CleanSVG:
         nslink = self.root.nsmap.get(namespace)
 
         if self._verbose:
-            print "\nRemoving namespace, %s" % namespace
+            print("\nRemoving namespace, %s" % namespace)
             if nslink:
-                print " - Link: %s" % nslink
+                print(" - Link: %s" % nslink)
 
         if nslink:
             nslink = "{%s}" % nslink
@@ -294,13 +295,13 @@ class CleanSVG:
                 if element.tag[:length] == nslink:
                     self.root.remove(element)
                     if self._verbose:
-                        print " - removed element: %s" % element.tag[length:]
+                        print(" - removed element: %s" % element.tag[length:])
                 
-                for attribute in element.attrib.keys():
+                for attribute in list(element.attrib.keys()):
                     if attribute[:length] == nslink:
                         del element.attrib[attribute]
                         if self._verbose:
-                            print " - removed attribute from tag: %s" % element.tag
+                            print(" - removed attribute from tag: %s" % element.tag)
                 
             del self.root.nsmap[namespace]
     
@@ -310,7 +311,7 @@ class CleanSVG:
         for element in self.tree.iter():
             style_list = []
 
-            if "style" in element.keys():
+            if "style" in list(element.keys()):
                 styles = element.attrib["style"].split(';')
                 style_list.extend([tuple(style.split(':')) for style in styles])
                 del element.attrib["style"]
@@ -349,7 +350,7 @@ class CleanSVG:
         """ Apply transforms to element coordinates. """
         
         for element in self.tree.iter():
-            if 'transform' in element.keys():
+            if 'transform' in list(element.keys()):
                 all_transforms = element.get('transform')
                 transform_list = re_transform.findall(all_transforms)
                 transform_list.reverse()
@@ -373,7 +374,7 @@ class CleanSVG:
     def _applyGroupTransforms(self, group_element, transformations):
         
         # Ensure all child elements are paths
-        children = [child for child in group_element if isinstance(child.tag, basestring)]
+        children = [child for child in group_element if isinstance(child.tag, str)]
         if any((child.tag.split('}')[1] != 'path' for child in children)):
             return
             
@@ -421,14 +422,14 @@ class CleanSVG:
                 element.set(coord_name, self._formatNumber(new_coord))
             return True
             
-        elif "points" in element.keys():
+        elif "points" in list(element.keys()):
             values = [float(v) + delta[i % 2] for i, v in enumerate(re_coord_split.split(element.get("points")))]
-            str_values = map(self._formatNumber, values)
+            str_values = list(map(self._formatNumber, values))
             point_list = " ".join((str_values[i] + "," + str_values[i+1] for i in range(0, len(str_values), 2)))
             element.set("points", point_list)
             return True
             
-        elif "d" in element.keys():
+        elif "d" in list(element.keys()):
             self._translatePath(element, delta)
             return True
 
@@ -445,7 +446,7 @@ class CleanSVG:
                 element.set(coord_name, self._formatNumber(new_coord))
             return True
 
-        elif "d" in element.keys():
+        elif "d" in list(element.keys()):
             self._scalePath(element, delta)
             return True
 
