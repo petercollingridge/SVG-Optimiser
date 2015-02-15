@@ -561,7 +561,7 @@ class CleanSVG:
 #only coded for 'normal' condition where there are M/C/V/L/H/T/S/Z but no A 
 #todo:write simpler code for simpler 'normalised' condition where there is only M/C/L/Z 
 
-	def invers(com,mode='normal'):    ##takes in list of absolute coordinates
+    def invers(com,mode='normal'):    ##takes in list of absolute coordinates
 
     	options={ 'M':findforM ,'V':findforv ,'H':findforh ,'Z':findforz ,'z':findforz } 
 
@@ -584,15 +584,15 @@ class CleanSVG:
     	return cominv	
 
 
-	def findforz(com,index):
+    def findforz(com,index):
     	clist=[]
     	return ['M',findvhbehind(clist,com,index)]    
 
 
-	def findforM(com,index):
+    def findforM(com,index):
     	return ['Z',[]]
 
-	def findforv(com,index):
+    def findforv(com,index):
     	list=['V',com[index][1][-2::-1]]
     	if com[index-1][0]=='H':
         	list[1].append(com[index-2][1][-1])
@@ -600,7 +600,7 @@ class CleanSVG:
         	list[1].append(com[index-1][1][-1])
     	return list
 
-	def findforh(com,index):
+    def findforh(com,index):
     	list=['H',com[index][1][-2::-1]]
     	if com[index-1][0]=='V':
         	list[1].append(findv(com,index-1))
@@ -608,8 +608,7 @@ class CleanSVG:
         	list[1].append(com[index-1][1][-2])
     	return list 
 
-	def findvhbehind(list,com,index):   
-
+    def findvhbehind(list,com,index):   
     #only for normal commands(excluding V and H)
     #this function checks whether preceding command is V/H 
     #and extracts the absolute x and y coordinates accordngly 
