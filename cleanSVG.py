@@ -509,8 +509,8 @@ class CleanSVG:
         commands=deepcopy(command)   ##so that list is copied by value and not by reference
         commands=map(list,commands)  ##list of tuples converted into list of lists, because lists are mutable
         xabs,yabs=0,0
-        tonew=len(commands)
-        for g in range(0,tonew):
+        leng=len(commands)
+        for g in range(0,leng):
             if (commands[g][0] in lower):
 	            length=len(commands[g][1])
 	            n = num_commands[commands[g][0]]
@@ -551,10 +551,119 @@ class CleanSVG:
 	        else:
 	            xabs,yabs=commands[g][1][-2],commands[g][1][-1]
 
-        if (commands[g][0]=='M' or commands[g][0]=='m'): 
+            if (commands[g][0]=='M' or commands[g][0]=='m'): 
 	        temp1=xabs 
 	        temp2=yabs
-    return commands
+        return commands
+
+
+
+#only coded for 'normal' condition where there are M/C/V/L/H/T/S/Z but no A 
+#todo:write simpler code for simpler 'normalised' condition where there is only M/C/L/Z 
+
+	def invers(com,mode='normal'):    ##takes in list of absolute coordinates
+
+    	options={ 'M':findforM ,'V':findforv ,'H':findforh ,'Z':findforz ,'z':findforz } 
+
+    	if com[-1][0]!='Z' and com[-1][0]!='z':
+		com.append(['Z',[]])                 				
+
+    	l=len(com)
+    	cominv=[[] for i in range(l)]
+    		for t in range(-1,-l-1,-1):
+				if com[t][0] in options.keys():
+	    			cominv[-t-1]=options[com[t][0]](com,t)
+				else:
+	    			list=[]
+	    			r=(len(com[t][1][-3::-1]))/2
+	    			if r:
+        				for q in range(r):
+	   	    				list.append(com[t][1][-4-(2*q)])
+	    	    			list.append(com[t][1][-4-(2*q)+1])	
+	    			cominv[-t-1]=[com[t][0],findvhbehind(list,com,t)]
+    	return cominv	
+
+
+	def findforz(com,index):
+    	clist=[]
+    	return ['M',findvhbehind(clist,com,index)]    
+
+
+	def findforM(com,index):
+    	return ['Z',[]]
+
+	def findforv(com,index):
+    	list=['V',com[index][1][-2::-1]]
+    	if com[index-1][0]=='H':
+        	list[1].append(com[index-2][1][-1])
+    	else:
+        	list[1].append(com[index-1][1][-1])
+    	return list
+
+	def findforh(com,index):
+    	list=['H',com[index][1][-2::-1]]
+    	if com[index-1][0]=='V':
+        	list[1].append(findv(com,index-1))
+    	else:
+        	list[1].append(com[index-1][1][-2])
+    	return list 
+
+	def findvhbehind(list,com,index):   
+
+    #only for normal commands(excluding V and H)
+    #this function checks whether preceding command is V/H 
+    #and extracts the absolute x and y coordinates accordngly 
+
+    	if com[index-1][0]=='H':
+	    	list.append(com[index-1][1][-1])
+	    	list.append(findh(com,index-1))
+
+    	elif com[index-1][0]=='V':
+  	    	list.append(findv(com,index-1))
+	    	list.append(com[index-1][1][-1])
+	  
+    	else:
+			copy=index-1
+			while(len(com[copy][1])==0):
+	    		copy=copy-1
+			list.append(com[copy][1][-2]) 
+        	list.append(com[copy][1][-1])
+    	return list	
+    
+
+    def findv(com,index):     #to get xabs
+        if com[index-1][0]=='H':
+	    return com[index-1][1][-1]
+        else:
+	    return com[index-1][1][-2]
+
+    def findh(com,index):          #to get yabs
+        return com[index-1][1][-1]
+
+
+
+
+    def complete(sizex,sizey,listcom,scalex,scaley):     #function to add the outer frame of the image
+	##called in the final step of making an inverse path of a given path element
+
+        text='M0 0 '+'0 '+str(sizey/(scaley*1.0))+' '+str(sizex/(scalex*1.0))+' '+str(sizey/scaley*1.0)+' '+str(sizex/(scalex*1.0))+' 0Z'        
+        listcom=text+listcom
+        return listcom	
+
+
+    def tostr(listcom):     ##given a list of commands, convert it into a text string
+        text=''
+        c=len(listcom)
+        for i in range(c):
+	    text=text+listcom[i][0]   
+	    comms=len(listcom[i][1])
+	    if comms>0:
+	        for j in range(comms):
+		    if j==0:
+		        text=text+str(listcom[i][1][j])
+		    else:
+		        text=text+" "+str(listcom[i][1][j])
+        return text 
 
 
 def main(filename):
