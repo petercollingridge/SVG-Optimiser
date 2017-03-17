@@ -102,7 +102,7 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 		- polyline/polygon
 		- rect -> polygon/path?
             
-## CSS stlying
+## CSS styling
 	Need to check whether style element already exists and whether class names already exist.
     Ideally find most efficient way to class elements for styling.
     
