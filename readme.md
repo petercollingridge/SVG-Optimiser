@@ -7,6 +7,12 @@ Python program to clean up SVG files, particularly those created by Inkscape or 
 ## Remove attributes
 	Remove attributes with a given name, e.g. remove 'id' attributes, which often aren't used.
 
+## Remove comments
+    Removes all comments.
+
+## Remove elements
+    Remove elements by their tag name.
+
 ## Remove namespaces
 	Remove all attributes associated with a given namespace, e.g. remove 'sodipodi' attributes created by Inkscape.
 	

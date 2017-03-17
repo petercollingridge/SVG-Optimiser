@@ -258,6 +258,26 @@ class CleanSVG:
                 if self._verbose: print ' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute])
                 del element.attrib[attribute]
     
+    def removeElement(self, tagName):
+        """ Remove all instances of an element. """
+
+        if self._verbose: print '\nRemoving element: %s' % tagName
+
+        for element in self.tree.iter():
+            if (isinstance(element.tag, basestring)):
+                tag = element.tag.split('}')[1]
+                if tag == tagName:
+                    element.getparent().remove(element)
+
+    def removeComments(self):
+        """ Remove all comments. """
+
+        if self._verbose: print '\nRemoving comments'
+
+        for element in self.tree.iter():
+            if element.tag is etree.Comment:
+                element.getparent().remove(element)
+
     def removeNonDefIDAttributes(self):
         """ Go through def elements and find IDs referred to, then remove all IDs except those. """
 
