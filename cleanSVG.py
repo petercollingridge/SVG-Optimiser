@@ -118,6 +118,9 @@ STYLES = set([
 "writing-mode",
 ])
 
+style_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+id_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
 class CleanSVG:
     def __init__(self, svgfile=None, verbose=False):
         self._verbose = verbose
@@ -126,7 +129,7 @@ class CleanSVG:
         
         # Need to update this if style elements found
         self.styles = {}
-        self.style_counter = 0
+        self.style_counter = 1
         
         self.num_format = "%s"
         self.removeWhitespace = True
@@ -356,7 +359,7 @@ class CleanSVG:
                 
                 style_tuple = tuple(style_list)
                 if style_tuple not in self.styles:
-                    style_class = "style%d" % self.style_counter
+                    style_class = self._intToId(self.style_counter, style_chars)
                     self.styles[style_tuple] = style_class
                     self.style_counter += 1
                 else:
@@ -389,7 +392,55 @@ class CleanSVG:
                 # Doesn't take into account if one transformation isn't sucessful
                 if sucessful_transformation:
                     del element.attrib["transform"]
-    
+
+    def trimIds(self):
+        ids = {}
+
+        for element in self.tree.iter():
+            if not isinstance(element.tag, basestring):
+                continue
+
+            attrs = element.attrib
+            if 'id' in attrs:
+                id = attrs['id']
+                if id not in ids:
+                    ids[id] = 1
+                else:
+                    ids[id] += 1
+            if '{http://www.w3.org/1999/xlink}href' in attrs:
+                id = attrs['{http://www.w3.org/1999/xlink}href'].replace('#', '')
+                if id not in ids:
+                    ids[id] = 1
+                else:
+                    ids[id] += 1
+
+
+        id_num = 1
+        id_map = {}
+        for i in sorted(ids, key=ids.get, reverse=True):
+            id_map[i] = self._intToId(id_num, id_chars)
+            id_num += 1
+
+        for element in self.tree.iter():
+            if not isinstance(element.tag, basestring):
+                continue
+
+            attrs = element.attrib
+            if 'id' in attrs:
+                attrs['id'] = id_map[attrs['id']]
+            if '{http://www.w3.org/1999/xlink}href' in attrs:
+                attrs['{http://www.w3.org/1999/xlink}href'] = '#' + id_map[attrs['{http://www.w3.org/1999/xlink}href'].replace('#', '')]
+
+    def _intToId(self, id_num, chars):
+        rid = ''
+        size = len(chars)
+        while id_num > 0:
+            id_num -= 1
+            rid = chars[(id_num % size)] + rid
+            id_num = id_num/size
+
+        return rid
+
     def _applyGroupTransforms(self, group_element, transformations):
         
         # Ensure all child elements are paths
