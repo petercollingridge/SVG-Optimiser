@@ -1,5 +1,4 @@
-compiled files #
-##################
+# Compiled files #
 *.pyc
 venv
 
@@ -7,4 +6,5 @@ venv
 *~
 
 # Examples
-/examples/*  
+/examples/
+.venv/
