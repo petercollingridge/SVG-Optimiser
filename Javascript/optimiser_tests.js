@@ -222,5 +222,4 @@ var runTests = function() {
 	testElementParsing();
 	testTransformationParsing();
 	testTransformations();
-
 }

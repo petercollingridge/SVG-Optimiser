@@ -138,7 +138,7 @@ class CleanSVG:
         try:
             self.tree = etree.parse(filename)
         except IOError:
-            print "Unable to open file", filename
+            print("Unable to open file", filename)
             sys.exit(1)
 
         self.root = self.tree.getroot()
@@ -146,16 +146,16 @@ class CleanSVG:
     def analyse(self):
         """ Search for namespaces. Will do more later """
         
-        print "Namespaces:"
+        print("Namespaces:")
         for ns, link in self.root.nsmap.iteritems():
-            print "  %s: %s" % (ns, link)
+            print("  %s: %s" % (ns, link))
             
     def removeGroups(self):
         """ Remove groups with no attributes """
         # Doesn't work for nested groups
         
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, (str,bytes)):
                 continue
             
             element_type = element.tag.split('}')[1]
@@ -163,12 +163,11 @@ class CleanSVG:
                 parent = element.getparent()
                 if parent is not None:
                     parent_postion = parent.index(element)
-                    print
-                    print parent
+                    print(parent)
                     # Move children outside of group
                     for i, child in enumerate(element, parent_postion):
-                        print i
-                        print "move %s to %s" % (child, i)
+                        print(i)
+                        print("move %s to %s" % (child, i))
                         parent.insert(i, child)
                         
                     #del parent[i]
@@ -189,8 +188,8 @@ class CleanSVG:
             self._addStyleElement()
 
         if self.removeWhitespace:
-            svg_string = etree.tostring(self.root)
-            svg_string = re.sub(r'\n\s*' , "", svg_string)
+            svg_string = etree.tostring(self.root, encoding=str)
+            svg_string = re.sub(r'\n\s*', "", svg_string)
         else:
             svg_string = etree.tostring(self.root, pretty_print=pretty_print)
         
@@ -204,7 +203,7 @@ class CleanSVG:
         self.root.insert(0, style_element)
         style_text = '\n'
         
-        for styles, style_class in sorted(self.styles.iteritems(), key=lambda (k,v): v):
+        for styles, style_class in sorted(iter(self.styles.items()), key=lambda k_v: k_v[1]):
             style_text += "\t.%s{\n" % style_class
             for (style_id, style_value) in styles:
                 style_text += '\t\t%s:\t%s;\n' % (style_id, style_value)
@@ -218,7 +217,7 @@ class CleanSVG:
         self.num_format = "%%.%df" % decimal_places
         
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, (str,bytes)):
                 continue
             
             tag = element.tag.split('}')[1]
@@ -230,7 +229,7 @@ class CleanSVG:
                     point_list = " ".join((formatted_values[i] + "," + formatted_values[i+1] for i in range(0, len(formatted_values), 2)))
                     element.set("points", point_list)
                 except IndexError:
-                    print "Could not parse points list"
+                    print("Could not parse points list")
                     pass
                 
             elif tag == "path":
@@ -239,7 +238,7 @@ class CleanSVG:
                 element.set("d", coord_list)
                 #for coord in coords:
                 #    if re_path_coords.match(coord):
-                #        print coord
+                #        print(coord)
                 
             else:
                 for attribute in element.attrib.keys():
@@ -251,20 +250,20 @@ class CleanSVG:
 
         if exception_list is None: exception_list = []
 
-        if self._verbose: print '\nRemoving attribute: %s' % attribute
+        if self._verbose: print('\nRemoving attribute: %s' % attribute)
 
         for element in self.tree.iter():
             if attribute in element.attrib.keys() and element.attrib[attribute] not in exception_list:
-                if self._verbose: print ' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute])
+                if self._verbose: print(' - Removed attribute: %s="%s"' % (attribute, element.attrib[attribute]))
                 del element.attrib[attribute]
     
     def removeElement(self, tagName):
         """ Remove all instances of an element. """
 
-        if self._verbose: print '\nRemoving element: %s' % tagName
+        if self._verbose: print('\nRemoving element: %s' % tagName)
 
         for element in self.tree.iter():
-            if (isinstance(element.tag, basestring)):
+            if isinstance(element.tag, (str,bytes)):
                 tag = element.tag.split('}')[1]
                 if tag == tagName:
                     element.getparent().remove(element)
@@ -272,7 +271,7 @@ class CleanSVG:
     def removeComments(self):
         """ Remove all comments. """
 
-        if self._verbose: print '\nRemoving comments'
+        if self._verbose: print('\nRemoving comments')
 
         for element in self.tree.iter():
             if element.tag is etree.Comment:
@@ -284,7 +283,7 @@ class CleanSVG:
         def_IDs = []
 
         for element in self.tree.iter():
-            if not isinstance(element.tag, basestring):
+            if not isinstance(element.tag, (str,bytes)):
                 continue
             
             tag = element.tag.split('}')[1]
@@ -302,9 +301,9 @@ class CleanSVG:
         nslink = self.root.nsmap.get(namespace)
 
         if self._verbose:
-            print "\nRemoving namespace, %s" % namespace
+            print("\nRemoving namespace, %s" % namespace)
             if nslink:
-                print " - Link: %s" % nslink
+                print(" - Link: %s" % nslink)
 
         if nslink:
             nslink = "{%s}" % nslink
@@ -314,13 +313,13 @@ class CleanSVG:
                 if element.tag[:length] == nslink:
                     self.root.remove(element)
                     if self._verbose:
-                        print " - removed element: %s" % element.tag[length:]
+                        print(" - removed element: %s" % element.tag[length:])
                 
                 for attribute in element.attrib.keys():
                     if attribute[:length] == nslink:
                         del element.attrib[attribute]
                         if self._verbose:
-                            print " - removed attribute from tag: %s" % element.tag
+                            print(" - removed attribute from tag: %s" % element.tag)
                 
             del self.root.nsmap[namespace]
     
@@ -393,7 +392,7 @@ class CleanSVG:
     def _applyGroupTransforms(self, group_element, transformations):
         
         # Ensure all child elements are paths
-        children = [child for child in group_element if isinstance(child.tag, basestring)]
+        children = [child for child in group_element if isinstance(child.tag, (str,bytes))]
         if any((child.tag.split('}')[1] != 'path' for child in children)):
             return
             
@@ -431,7 +430,7 @@ class CleanSVG:
         return str_number
 
     def _translateElement(self, element, delta):
-        #print " - translate by: (%s, %s)" % delta
+        #print(" - translate by: (%s, %s)" % delta)
         element_type = element.tag.split('}')[1]
         coords = position_attributes.get(element_type)
 
